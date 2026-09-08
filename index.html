@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{color-scheme:light dark}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font:14px/1.5 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F3F5F9}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+<title>GA Repricing Platform</title>
+<meta name="description" content="Three-layer clickable prototype of the GA repricing solution — Repricing tool, PowerApps Tracking, and Power BI Reporting — with shared account and bid state.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --paper:#F3F5F9; --surface:#FFFFFF; --surface-2:#EDF0F6;
+    --border:#D9DFEA; --border-strong:#C1C9D9;
+    --ink:#15233F; --ink-2:#45516A; --muted:#6C7689;
+    --navy:#1C2C4E; --brand:#D51E28; --brand-ink:#A9151D;
+    --info:#2E5AAC; --info-bg:#E7EEFA;
+    --good:#1C7C4A; --good-bg:#E2F1E8;
+    --warn:#A96A08; --warn-bg:#FAF0DE;
+    --bad:#BF3B30; --bad-bg:#FBE8E5;
+    --yellow:#C9971B; --yellow-bg:#FBF2DA;
+    --shadow:0 1px 2px rgba(21,35,63,.05), 0 8px 24px -16px rgba(21,35,63,.18);
+    --fs-display:"Newsreader",Georgia,"Times New Roman",serif;
+    --fs-sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --fs-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D1524; --surface:#141F35; --surface-2:#1D2B47;
+      --border:#2B3B58; --border-strong:#3C4F72;
+      --ink:#ECF0F8; --ink-2:#BAC4D7; --muted:#8A95AC;
+      --navy:#25375D; --brand:#F0474F; --brand-ink:#F0474F;
+      --info:#77A4EE; --info-bg:#182A47;
+      --good:#48B57E; --good-bg:#12301F;
+      --warn:#E0A445; --warn-bg:#33270F;
+      --bad:#E9695C; --bad-bg:#331A16;
+      --yellow:#E3B84D; --yellow-bg:#332912;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D1524; --surface:#141F35; --surface-2:#1D2B47;
+    --border:#2B3B58; --border-strong:#3C4F72;
+    --ink:#ECF0F8; --ink-2:#BAC4D7; --muted:#8A95AC;
+    --navy:#25375D; --brand:#F0474F; --brand-ink:#F0474F;
+    --info:#77A4EE; --info-bg:#182A47;
+    --good:#48B57E; --good-bg:#12301F;
+    --warn:#E0A445; --warn-bg:#33270F;
+    --bad:#E9695C; --bad-bg:#331A16;
+    --yellow:#E3B84D; --yellow-bg:#332912;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--fs-sans);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3,h4{margin:0;text-wrap:balance;}
+  button,input,select,textarea{font-family:inherit;}
+  a{color:var(--info);}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:40;background:var(--surface);border-bottom:1px solid var(--border);}
+  .topbar .rule{height:3px;background:var(--brand);}
+  .topbar .inner{max-width:1440px;margin:0 auto;padding:11px 22px 0;display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .wordmark{display:flex;align-items:baseline;gap:9px;}
+  .wordmark b{font-family:var(--fs-display);font-weight:600;font-size:20px;}
+  .wordmark span{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:600;}
+  .top-actions{margin-left:auto;display:flex;gap:9px;align-items:center;}
+  .btn-plain{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;}
+  .btn-plain:hover{border-color:var(--brand);color:var(--brand);}
+  .tabs{max-width:1440px;margin:0 auto;padding:6px 22px 0;display:flex;gap:4px;}
+  .tab{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;cursor:pointer;border-bottom:2px solid transparent;}
+  .tab:hover{color:var(--ink);}
+  .tab[aria-selected="true"]{color:var(--brand);border-bottom-color:var(--brand);background:var(--surface-2);}
+  .tab .n{font-family:var(--fs-mono);font-size:10px;background:var(--brand);color:#fff;border-radius:9px;padding:0 5px;margin-left:5px;}
+
+  /* ---------- shell ---------- */
+  .shell{max-width:1440px;margin:0 auto;padding:18px 22px 60px;}
+  .roles{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+  .roles .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;margin-right:4px;}
+  .role-seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden;}
+  .role-seg button{border:0;border-right:1px solid var(--border);background:var(--surface);color:var(--ink-2);padding:7px 14px;font-size:12.5px;font-weight:500;cursor:pointer;}
+  .role-seg button:last-child{border-right:0;}
+  .role-seg button[aria-pressed="true"]{background:var(--navy);color:#fff;font-weight:600;}
+  :root[data-theme="dark"] .role-seg button[aria-pressed="true"]{color:#0D1524;background:var(--info);}
+
+  .lede{color:var(--ink-2);font-size:13px;margin:-6px 0 16px;max-width:76ch;}
+  .lede b{color:var(--ink);}
+
+  /* ---------- generic ---------- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+  .card > h3{padding:12px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .card > h3 .plat{margin-left:auto;font-family:var(--fs-mono);font-weight:400;letter-spacing:0;text-transform:none;font-size:10px;}
+  .card .pad{padding:16px;}
+  .appwin{border:1px solid var(--border-strong);border-radius:10px;overflow:hidden;}
+  .appwin > .bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--navy);color:#fff;font-size:12px;font-weight:600;}
+  .appwin > .bar .dots{display:flex;gap:5px;}
+  .appwin > .bar .dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.35);}
+  .appwin > .bar .plat{margin-left:auto;font-family:var(--fs-mono);font-weight:400;font-size:11px;opacity:.85;}
+  .appwin > .body{padding:16px;background:var(--surface);}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .field{min-width:0;}
+  .field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
+  .field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);font-size:13px;}
+  .field textarea{resize:vertical;min-height:70px;line-height:1.45;}
+  .field .ro{padding:8px 10px;border:1px dashed var(--border-strong);border-radius:7px;background:var(--surface-2);color:var(--ink-2);font-size:12.5px;font-family:var(--fs-mono);}
+  :focus-visible{outline:2px solid var(--info);outline-offset:1px;}
+
+  .btn{border:0;border-radius:8px;padding:9px 17px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .btn.primary{background:var(--brand);color:#fff;}
+  .btn.primary:hover{background:var(--brand-ink);}
+  .btn.ghost{background:var(--surface);color:var(--ink-2);border:1px solid var(--border-strong);}
+  .btn.ghost:hover{border-color:var(--info);color:var(--info);}
+  .btn.ok{background:var(--good);color:#fff;}
+  .btn.danger{background:var(--surface);color:var(--bad);border:1px solid var(--bad);}
+  .btn.sm{padding:6px 11px;font-size:12px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .segfield{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden;}
+  .segfield button{border:0;border-right:1px solid var(--border);background:var(--surface);color:var(--ink-2);padding:9px 15px;font-size:13px;font-weight:500;cursor:pointer;}
+  .segfield button:last-child{border-right:0;}
+  .segfield button[aria-pressed="true"]{background:var(--brand);color:#fff;font-weight:600;}
+
+  .callout{border-radius:9px;padding:11px 13px;font-size:12.5px;line-height:1.5;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);}
+  .callout.info{background:var(--info-bg);border-color:color-mix(in srgb,var(--info) 30%,transparent);color:var(--ink);}
+  .callout.good{background:var(--good-bg);border-color:color-mix(in srgb,var(--good) 30%,transparent);}
+  .callout.warn{background:var(--warn-bg);border-color:color-mix(in srgb,var(--warn) 35%,transparent);}
+  .callout.bad{background:var(--bad-bg);border-color:color-mix(in srgb,var(--bad) 35%,transparent);}
+  .callout b{color:var(--ink);}
+  .callout .k{font-family:var(--fs-mono);font-size:11.5px;}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .pill.good{background:var(--good-bg);color:var(--good);}
+  .pill.warn{background:var(--warn-bg);color:var(--warn);}
+  .pill.bad{background:var(--bad-bg);color:var(--bad);}
+  .pill.info{background:var(--info-bg);color:var(--info);}
+  .pill.yellow{background:var(--yellow-bg);color:var(--yellow);}
+  .pill.mut{background:var(--surface-2);color:var(--muted);}
+
+  table.sheet{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.sheet th,table.sheet td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;}
+  table.sheet th{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;}
+  table.sheet td.num,table.sheet th.num{text-align:right;font-family:var(--fs-mono);font-variant-numeric:tabular-nums;}
+  table.sheet tr:last-child td{border-bottom:0;}
+  table.sheet .total td{font-weight:700;background:var(--surface-2);}
+  table.sheet tbody tr.click{cursor:pointer;}
+  table.sheet tbody tr.click:hover{background:var(--surface-2);}
+
+  /* stat tiles */
+  .statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .stat{border:1px solid var(--border);border-radius:10px;padding:13px 14px;background:var(--surface);}
+  .stat .v{font-family:var(--fs-display);font-weight:600;font-size:26px;line-height:1;}
+  .stat .l{font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.04em;}
+  .stat .s{font-size:11px;color:var(--ink-2);margin-top:2px;font-family:var(--fs-mono);}
+
+  /* board layout */
+  .board{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;}
+  .blist{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow-y:auto;padding-right:2px;}
+  .brow{display:grid;grid-template-columns:6px 1fr auto;gap:10px;align-items:center;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px 10px 0;cursor:pointer;background:var(--surface);}
+  .brow:hover{border-color:var(--info);}
+  .brow.sel{border-color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--ink) 18%,transparent);}
+  .brow .stripe{align-self:stretch;border-radius:9px 0 0 9px;}
+  .brow.yellow .stripe{background:var(--yellow);}
+  .brow.blue .stripe{background:var(--info);}
+  .brow.green .stripe{background:var(--good);}
+  .brow.red .stripe{background:var(--bad);}
+  .brow.grey .stripe{background:var(--border-strong);}
+  .brow .nm{font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;}
+  .brow .meta{font-size:11px;color:var(--muted);font-family:var(--fs-mono);}
+  .brow .unread{width:8px;height:8px;border-radius:50%;background:var(--brand);flex-shrink:0;}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:8px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .bdetail{border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;}
+  .bdetail .dhead{padding:14px 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--surface),var(--surface-2));}
+  .bdetail .dhead h3{font-family:var(--fs-display);font-weight:600;font-size:20px;}
+  .bdetail .dhead .sub{font-size:12px;color:var(--muted);margin-top:2px;font-family:var(--fs-mono);}
+  .bdetail .dbody{padding:18px;display:flex;flex-direction:column;gap:14px;}
+
+  /* materials */
+  .matlist{display:flex;flex-direction:column;gap:6px;}
+  .matlist .m{display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--fs-mono);border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--surface-2);}
+
+  /* engine checks */
+  .checks{display:flex;flex-direction:column;}
+  .check{display:grid;grid-template-columns:22px 1fr auto;gap:11px;align-items:start;padding:10px 4px;border-bottom:1px solid var(--border);}
+  .check:last-child{border-bottom:0;}
+  .check .ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--muted);border:1.5px solid var(--border-strong);}
+  .check.run .ico{border-color:var(--info);color:var(--info);animation:spin 1s linear infinite;}
+  .check.pass .ico{background:var(--good);border-color:var(--good);color:#fff;}
+  .check.fail .ico{background:var(--bad);border-color:var(--bad);color:#fff;}
+  .check .lab{font-weight:600;font-size:13px;}
+  .check .det{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:var(--fs-mono);line-height:1.4;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion:reduce){.check.run .ico{animation:none;}}
+
+  .lineflag{background:var(--warn-bg);}
+  .mono{font-family:var(--fs-mono);}
+  .tiny{font-size:11px;color:var(--muted);}
+
+  /* decomposition tree */
+  .tree{display:flex;gap:0;align-items:stretch;overflow-x:auto;padding:6px 0;}
+  .tcol{display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:180px;}
+  .tcol.links{min-width:34px;}
+  .tnode{border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px;background:var(--surface);}
+  .tnode.root{background:var(--navy);color:#fff;border-color:var(--navy);}
+  .tnode .tn-l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.85;}
+  .tnode .tn-v{font-family:var(--fs-display);font-weight:600;font-size:22px;line-height:1.1;}
+  .tnode .tn-bar{height:6px;border-radius:4px;background:var(--surface-2);margin-top:7px;overflow:hidden;}
+  .tnode .tn-bar i{display:block;height:100%;border-radius:4px;}
+  .link{flex:1;border-bottom:1px solid var(--border-strong);}
+  .lwrap{display:flex;flex-direction:column;justify-content:space-around;height:100%;}
+
+  /* treemap */
+  .treemap{display:flex;flex-wrap:wrap;gap:8px;}
+  .tm{border:1px solid var(--border-strong);border-radius:9px;padding:11px;background:var(--surface);min-width:150px;flex:1;}
+  .tm h4{font-size:13px;display:flex;justify-content:space-between;align-items:baseline;}
+  .tm h4 span{font-family:var(--fs-mono);font-size:11px;color:var(--muted);}
+  .tm .stack{display:flex;height:14px;border-radius:5px;overflow:hidden;margin:9px 0 7px;background:var(--surface-2);}
+  .tm .stack i{height:100%;}
+  .tm .key{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:10.5px;color:var(--muted);}
+  .tm .key span{display:inline-flex;align-items:center;gap:4px;}
+  .tm .key b{width:8px;height:8px;border-radius:2px;display:inline-block;}
+
+  /* drawer + modal */
+  .scrim{position:fixed;inset:0;background:rgba(10,16,30,.45);z-index:50;display:flex;justify-content:flex-end;}
+  .drawer{width:min(400px,92vw);background:var(--surface);height:100%;box-shadow:-12px 0 40px -20px rgba(0,0,0,.5);display:flex;flex-direction:column;}
+  .drawer .dh{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-weight:700;}
+  .drawer .dh .x{margin-left:auto;cursor:pointer;color:var(--muted);border:0;background:0;font-size:16px;}
+  .drawer .dc{overflow-y:auto;padding:8px 0;flex:1;}
+  .li{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:8px 16px;font-size:12px;line-height:1.4;}
+  .li time{font-family:var(--fs-mono);font-size:10px;color:var(--muted);padding-top:2px;}
+  .li b{color:var(--ink);}
+  .li.acc{border-left:2px solid var(--brand);}
+
+  .modal-scrim{position:fixed;inset:0;background:rgba(10,16,30,.5);z-index:55;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{background:var(--surface);border-radius:14px;max-width:720px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 30px 80px -30px rgba(0,0,0,.6);}
+  .modal .mh{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .modal .mh h3{font-family:var(--fs-display);font-weight:600;font-size:19px;}
+  .modal .mh .x{margin-left:auto;cursor:pointer;color:var(--muted);border:0;background:0;font-size:17px;}
+  .modal .mb{padding:20px;display:flex;flex-direction:column;gap:14px;}
+
+  .kpi-rows{width:100%;border-collapse:collapse;font-size:12px;}
+  .kpi-rows th,.kpi-rows td{padding:6px;border-bottom:1px solid var(--border);}
+  .kpi-rows th{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+  .kpi-rows input{width:100%;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);font-family:var(--fs-mono);font-size:12px;text-align:right;}
+  .kpi-rows .del{border:0;background:0;color:var(--muted);cursor:pointer;font-size:13px;}
+  .kpi-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .kpi-table th,.kpi-table td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--border);}
+  .kpi-table th:first-child,.kpi-table td:first-child{text-align:left;}
+  .kpi-table td{font-family:var(--fs-mono);font-variant-numeric:tabular-nums;}
+  .kpi-table .metric{font-family:var(--fs-sans);font-weight:600;}
+
+  .toast-wrap{position:fixed;right:18px;bottom:18px;z-index:60;display:flex;flex-direction:column;gap:9px;}
+  .toast{background:var(--navy);color:#fff;border-radius:9px;padding:11px 15px;font-size:13px;box-shadow:0 12px 32px -12px rgba(0,0,0,.5);max-width:330px;display:flex;gap:9px;align-items:flex-start;animation:rise .3s ease;}
+  .toast .x{margin-left:auto;cursor:pointer;opacity:.7;}
+  @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){.toast{animation:none;}}
+
+  .foot{max-width:1440px;margin:0 auto;padding:6px 22px 40px;color:var(--muted);font-size:11px;}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
+  .stack{display:flex;flex-direction:column;gap:16px;}
+
+  @media (max-width:1080px){
+    .board{grid-template-columns:1fr;}
+    .blist{max-height:none;flex-direction:row;overflow-x:auto;}
+    .brow{min-width:230px;}
+    .cols2{grid-template-columns:1fr;}
+  }
+  @media (max-width:720px){
+    .grid2,.grid3{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="rule"></div>
+  <div class="inner">
+    <div class="wordmark"><b>GA Repricing</b><span>Platform Prototype · Finance DT</span></div>
+    <div class="top-actions">
+      <button class="btn-plain" data-act="open-log">Activity log</button>
+      <button class="btn-plain" data-act="reset-all">Reset demo</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div class="shell">
+  <div class="roles" id="roles"></div>
+  <div id="view"></div>
+</div>
+
+<div class="foot" id="foot"></div>
+<div class="toast-wrap" id="toasts"></div>
+<div id="overlay"></div>
+
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ============================================================ seed data */
+const SALE_MGRS = ["Sam Ortiz","Dana Weiss","Wei Tan"];
+const PM_OF = {"Sam Ortiz":"Jessica","Dana Weiss":"Victor","Wei Tan":"Priya"};
+
+const CATALOG = [
+  {pn:"21HD003TAU", family:"ThinkPad T14 Gen 5", memory:"DDR5-5600 16GB", ssd:"G4P 512GB", cpu:"Core Ultra 7 155U", flag:false, marginPct:11.4, base:1180, qty:60},
+  {pn:"21MW0012US", family:"ThinkPad P16 Gen 3", memory:"DDR5-6400 32GB", ssd:"G4P 1TB", cpu:"Core Ultra 9 + RTX 3000 Ada", flag:true, marginPct:null, base:2640, qty:14},
+  {pn:"21KC004GGE", family:"ThinkPad X1 Carbon G13", memory:"DDR5-6400 16GB", ssd:"G4P 512GB", cpu:"Core Ultra 7 165U", flag:false, marginPct:12.1, base:1560, qty:32},
+  {pn:"20XW00ABUS", family:"ThinkPad L15 Gen 4", memory:"DDR5-4800 8GB", ssd:"G4 256GB", cpu:"Ryzen 5 PRO 7530U", flag:false, marginPct:9.3, base:820, qty:120}
+];
+const REFBIDS=["GA-FY25-8842","GA-FY25-8801","GA-FY25-9017","GA-FY25-8763"];
+
+/* baseline data source behind the CFO calculator */
+const BASELINE = [
+  {geo:"NA",   vertical:"Tech",       rev:12.40e6, tmcgp:1.79e6},
+  {geo:"NA",   vertical:"Retail",     rev:4.80e6,  tmcgp:0.61e6},
+  {geo:"EMEA", vertical:"Retail",     rev:6.10e6,  tmcgp:0.79e6},
+  {geo:"EMEA", vertical:"Sport",      rev:2.20e6,  tmcgp:0.24e6},
+  {geo:"EMEA", vertical:"Industrial", rev:3.40e6,  tmcgp:0.45e6},
+  {geo:"AP",   vertical:"Tech",       rev:8.40e6,  tmcgp:1.27e6},
+  {geo:"AP",   vertical:"Retail",     rev:3.00e6,  tmcgp:0.36e6}
+];
+const MT_TARGET = 14.0; // TMCGP% target
+
+let seq = 5015;
+function nextBidId(){ return "B-"+(++seq); }
+let clock = 9*3600+14*60+3;
+
+function acc(o){
+  return Object.assign({
+    active:true, track:null, guidance:null, effective:null, lnl:null,
+    lastBy:null, lastAt:null, needsSaleConfirm:false,
+    exception:null, unread:{sale:false,pm:false}
+  }, o);
+}
+
+function freshState(){
+  const A = [
+    acc({id:"meta", name:"Meta", mgr:"Sam Ortiz", sp:"s.chan@lenovo.com", geo:"NA", vertical:"Tech", gam:"Paul",
+      track:"RPG", active:true, guidance:"Full", effective:"2026-02-01", lnl:false, lastBy:"s.chan", lastAt:"09-02 14:20"}),
+    acc({id:"nike", name:"Nike", mgr:"Sam Ortiz", sp:"a.raj@lenovo.com", geo:"EMEA", vertical:"Retail", gam:"Marta",
+      track:"Exception", active:true,
+      exception:{stage:"Director-review", performance:"4 straight quarters at full guidance. 2026 renewal at churn risk — incumbent competitor bid ~8% below our guided price. Volume steady at 3.1k units/yr.",
+        materials:["renewal_terms_nike.pdf","tmcgp_bridge_fy26.xlsx","competitive_summary.pptx"],
+        submittedBy:"Jessica", submittedAt:"09-05 11:04", decision:null, decisionNote:"", calc:null}}),
+    acc({id:"stripe", name:"Stripe", mgr:"Sam Ortiz", sp:"s.chan@lenovo.com", geo:"NA", vertical:"Tech", gam:"Paul",
+      track:"Exception", active:true, exception:{stage:"PM-intake", performance:"", materials:[], submittedBy:null, submittedAt:null, decision:null, decisionNote:"", calc:null}}),
+    acc({id:"cisco", name:"Cisco", mgr:"Dana Weiss", sp:"d.weiss@lenovo.com", geo:"NA", vertical:"Tech", gam:"Ken",
+      track:"RPG", active:true, guidance:"Partial", effective:"2026-01-15", lnl:true, lastBy:"d.weiss", lastAt:"09-03 10:12"}),
+    acc({id:"puma", name:"Puma", mgr:"Dana Weiss", sp:"t.koch@lenovo.com", geo:"EMEA", vertical:"Retail", gam:"Lena",
+      track:"RPG", active:true, guidance:null, lastBy:"t.koch", lastAt:"09-01 16:40"}),
+    acc({id:"bosch", name:"Bosch", mgr:"Dana Weiss", sp:"t.koch@lenovo.com", geo:"EMEA", vertical:"Industrial", gam:"Lena",
+      track:"Exception", active:true, guidance:"Partial", unread:{sale:true,pm:true},
+      exception:{stage:"Approved", performance:"Strategic industrial account, 5-year relationship. Requested one-time 6% concession vs 10% guidance for a plant-wide refresh (2.6k units).",
+        materials:["plant_refresh_bosch.pdf","tmcgp_bridge_fy26.xlsx"], submittedBy:"Victor", submittedAt:"09-04 09:30",
+        decision:"Approved", decisionNote:"One-time 6% concession approved for the refresh tranche only. Revisit at FY27 renewal.", calc:null}}),
+    acc({id:"adidas", name:"Adidas", mgr:"Dana Weiss", sp:"t.koch@lenovo.com", geo:"EMEA", vertical:"Retail", gam:"Lena",
+      track:"Exception", active:true, guidance:"None", unread:{sale:true,pm:false},
+      exception:{stage:"Rejected", performance:"Requested full waiver of the Aug guidance uplift citing budget freeze. No competitive pressure documented.",
+        materials:["budget_note_adidas.pdf"], submittedBy:"Victor", submittedAt:"09-04 15:10",
+        decision:"Rejected", decisionNote:"Impact exceeds the MT threshold and no competitive justification. Renegotiate volume commitment instead.", calc:null}}),
+    acc({id:"ibm", name:"IBM", mgr:"Wei Tan", sp:"w.tan@lenovo.com", geo:"AP", vertical:"Tech", gam:"Arjun",
+      track:"RPG", active:true, guidance:"Full", effective:"2026-03-01", lnl:false, lastBy:"w.tan", lastAt:"09-02 08:55"}),
+    acc({id:"fifa", name:"FIFA", mgr:"Wei Tan", sp:"l.gomez@lenovo.com", geo:"EMEA", vertical:"Sport", gam:"Sofia",
+      track:"Exception", active:true, exception:{stage:"PM-intake", performance:"", materials:[], submittedBy:null, submittedAt:null, decision:null, decisionNote:"", calc:null}}),
+    acc({id:"rakuten", name:"Rakuten", mgr:"Wei Tan", sp:"w.tan@lenovo.com", geo:"AP", vertical:"Retail", gam:"Arjun",
+      track:"RPG", active:false, guidance:"None", lastBy:"w.tan", lastAt:"08-28 13:00"}),
+    acc({id:"snowflake", name:"Snowflake", mgr:"Sam Ortiz", sp:"s.chan@lenovo.com", geo:"NA", vertical:"Tech", gam:"Paul"}),
+    acc({id:"zara", name:"Zara", mgr:"Dana Weiss", sp:"t.koch@lenovo.com", geo:"EMEA", vertical:"Retail", gam:"Lena"})
+  ];
+
+  const bids = [
+    mkBid("B-5012","snowflake","RPG","s.chan","Pricer",[0,1,2]),
+    mkBid("B-5013","zara","RPG","t.koch","Pricer",[0,3]),
+    mkBid("B-5009","rakuten","RPG","w.tan","PM",[3,0], {escalated:true})
+  ];
+  // pre-price the escalated one
+  const b9 = bids.find(b=>b.id==="B-5009");
+  b9.priced=true; b9.status="sent-to-PM"; b9.pricerNote="Margin below floor on both lines — renewal at risk if we hold guidance. Need PM call.";
+  b9.lines.forEach((l,i)=>{ l.marginPct = i===0?3.4:2.7; l.priced=true; });
+
+  return {
+    tab:"repricing",
+    role:{repricing:"sale", tracking:"sale", reporting:"ga"},
+    accounts:A, bids,
+    saleBook:"Sam Ortiz",
+    sel:{pricerBid:null, pmAcct:null, dirAcct:null, saleAcct:null},
+    log:[{t:stamp(), html:"Prototype loaded — three layers share one account &amp; bid state.", acc:false}],
+    overlay:null,
+    calc:{rows:[{u:120,rev:163680,t:8.5}], out:null, acctId:null}
+  };
+}
+
+function mkBid(id, accId, type, by, assignedTo, lineIdx, extra){
+  return Object.assign({
+    id, accountId:accId, type, submittedBy:by, submittedAt:stamp(),
+    assignedTo, status:"assigned", priced:false, calcRunning:false,
+    pricerNote:"", pricerDecision:null,
+    lines: lineIdx.map(i=>{
+      const c=CATALOG[i];
+      return {pn:c.pn, family:c.family, memory:c.memory, ssd:c.ssd, cpu:c.cpu, flag:c.flag,
+        refBid:REFBIDS[i%REFBIDS.length], base:c.base, uplift:10,
+        newPrice:+(c.base*1.1).toFixed(2), qty:c.qty,
+        marginPct: c.marginPct, manualPrice:null, priced:false};
+    })
+  }, extra||{});
+}
+
+let S = freshState();
+
+/* ============================================================ helpers */
+function stamp(){ clock += 40+Math.floor(Math.random()*120); const h=Math.floor(clock/3600)%24,m=Math.floor(clock/60)%60,s=clock%60; return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`; }
+function log(html, isAcc){ S.log.unshift({t:stamp(), html, acc:!!isAcc}); if($("#logDrawer")) renderLogDrawer(); }
+function toast(html){
+  const w=$("#toasts"); const t=document.createElement("div"); t.className="toast";
+  t.innerHTML=`<div>${html}</div><span class="x" aria-label="dismiss">✕</span>`;
+  t.querySelector(".x").onclick=()=>t.remove(); w.appendChild(t); setTimeout(()=>t.remove(),6500);
+}
+const money=v=>"$"+Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const m2=v=>"$"+(v/1e6).toFixed(2)+"M";
+const pp=v=>(v>=0?"+":"")+v.toFixed(2)+" pp";
+const A=id=>S.accounts.find(a=>a.id===id);
+const bidAcct=b=>A(b.accountId);
+
+function linePrice(l){ return l.flag ? (l.manualPrice? +l.manualPrice : null) : l.newPrice; }
+function lineMargin(l){
+  if(l.flag && !l.manualPrice) return null;
+  if(!l.flag) return l.marginPct;
+  const p=+l.manualPrice, cost=l.newPrice*(1-14/100); // implied catalog cost basis
+  return +(((p-cost)/p)*100).toFixed(1);
+}
+function bidMargin(b){
+  let rev=0, gp=0, any=false;
+  b.lines.forEach(l=>{
+    const mg=lineMargin(l), p=linePrice(l);
+    if(mg==null||p==null) return;
+    any=true; const r=p*l.qty; rev+=r; gp+=r*mg/100;
+  });
+  return any? +(gp/rev*100).toFixed(1) : null;
+}
+
+/* board colour for an account, from a role's point of view */
+function boardColor(a, role){
+  if(a.track==="RPG") return "blue";
+  if(a.track==="Exception" && a.exception){
+    const st=a.exception.stage;
+    if(st==="Approved") return "green";
+    if(st==="Rejected") return "red";
+    if(role==="pm" && st==="PM-intake") return "yellow";
+    if(role==="director" && st==="Director-review") return "yellow";
+    return "grey";
+  }
+  return "grey";
+}
+const COLOR_ORDER={yellow:0,red:1,green:2,blue:3,grey:4};
+function sortedBoard(role){
+  return [...S.accounts]
+    .filter(a=>a.track) // only accounts in a lane
+    .map(a=>({a, c:boardColor(a,role)}))
+    .sort((x,y)=> (COLOR_ORDER[x.c]-COLOR_ORDER[y.c]) || x.a.name.localeCompare(y.a.name));
+}
+
+/* ============================================================ report math */
+function computeReport(list){
+  const total=list.length;
+  const active=list.filter(a=>a.active===true);
+  const notActive=list.filter(a=>a.active===false);
+  const b={full:0,partial:0,none:0,missing:0};
+  active.forEach(a=>{
+    if(a.guidance==="Full")b.full++;
+    else if(a.guidance==="Partial")b.partial++;
+    else if(a.guidance==="None")b.none++;
+    else b.missing++;
+  });
+  const exceptions=list.filter(a=>a.track==="Exception");
+  const missing=list.filter(a=>a.active===true && !a.guidance);
+  return {total, active:active.length, notActive:notActive.length, b, exceptions, missing, activeList:active};
+}
+
+/* ============================================================ render root */
+function render(){
+  renderTabs(); renderRoles();
+  const key = S.tab+":"+S.role[S.tab];
+  const map={
+    "repricing:sale":vwRepSale, "repricing:pricer":vwRepPricer, "repricing:pm":vwRepPM,
+    "tracking:sale":vwTrkSale, "tracking:pm":vwTrkPM, "tracking:director":vwTrkDir,
+    "reporting:ga":()=>vwReport("GA"), "reporting:gtp":()=>vwReport("GTP")
+  };
+  $("#view").innerHTML = (map[key]||(()=>"<p>—</p>"))();
+  $("#foot").textContent = "Clickable prototype of the Solution section (pp. 8–16). Layer 1 Repricing assumes the tool can plug into LBP; if not it runs standalone. Account names, part numbers and figures are illustrative demo data.";
+  renderOverlay();
+  bind();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderTabs(){
+  const rpg = S.bids.filter(b=>b.assignedTo==="Pricer"&&b.status==="assigned").length;
+  const pmq = S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake").length
+            + S.bids.filter(b=>b.assignedTo==="PM"&&b.status!=="pm-reviewed").length;
+  const dirq = S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="Director-review").length;
+  const badge=n=>n?`<span class="n">${n}</span>`:"";
+  const defs=[["repricing","1 · Repricing",rpg],["tracking","2 · Tracking",pmq+dirq],["reporting","3 · Reporting",0]];
+  $("#tabs").innerHTML=defs.map(([id,label,n])=>
+    `<button class="tab" role="tab" aria-selected="${S.tab===id}" data-tab="${id}">${label}${badge(n)}</button>`).join("");
+}
+function renderRoles(){
+  const cfg={
+    repricing:[["sale","Sale"],["pricer","Pricer"],["pm","Profit Manager"]],
+    tracking:[["sale","Sale"],["pm","Profit Manager"],["director","Director / CFO"]],
+    reporting:[["ga","GA dashboard"],["gtp","GTP · by vertical"]]
+  }[S.tab];
+  $("#roles").innerHTML = `<span class="lbl">${S.tab==="reporting"?"View":"Role"}</span>`+
+    `<div class="role-seg">`+cfg.map(([id,l])=>`<button data-role="${id}" aria-pressed="${S.role[S.tab]===id}">${l}</button>`).join("")+`</div>`;
+}
+
+/* ============================================================ L1 · Repricing · Sale */
+function vwRepSale(){
+  const mine = S.bids.filter(b=>true);
+  const opts = S.accounts.map(a=>`<option value="${a.id}">${a.name} · ${a.geo} · ${a.vertical}${a.track?` (in ${a.track})`:""}</option>`).join("");
+  const sa = S.sel.saleAcct || S.accounts[0].id;
+  const chosenType = S._saleType || "RPG";
+  const isExc = chosenType==="Exception";
+  return `
+  <p class="lede"><b>Layer 1 — Repricing.</b> Sale submits a bid and tags it. <b>RPG</b> is assigned straight to a Pricer; <b>Exception</b> is assigned straight to the Profit Manager and opens the exception intake form.</p>
+  <div class="cols2">
+    <div class="card">
+      <h3>Submit a bid <span class="plat">LBP plug-in · or standalone</span></h3>
+      <div class="pad stack">
+        <div class="field"><label>Account</label>
+          <select data-input="saleAcct">${opts.replace(`value="${sa}"`,`value="${sa}" selected`)}</select></div>
+        <div class="field"><label>Tag — which lane?</label>
+          <div class="segfield" data-input="saleType">
+            <button data-val="RPG" aria-pressed="${!isExc}">RPG · standard guidance</button>
+            <button data-val="Exception" aria-pressed="${isExc}">Exception · needs escalation</button>
+          </div>
+        </div>
+        ${isExc ? `
+          <div class="callout warn">Exception — fill the intake form. It lands on the Profit Manager's list; no email hand-off.</div>
+          <div class="field"><label>Reason for exception</label>
+            <textarea data-input="excReason" placeholder="e.g. customer budget freeze / competitive pressure / one-time concession request">${esc(S._excReason||"")}</textarea></div>
+          <div class="field"><label>Requested vs guided price</label>
+            <input type="text" data-input="excAsk" placeholder="e.g. 6% uplift vs 10% guided" value="${esc(S._excAsk||"")}"></div>
+        ` : `
+          <div class="callout info">RPG — the bid is auto-assigned to a Pricer, who runs the automated calc line-by-line.</div>
+          <div class="field"><label>Lines (from Sale's PN list)</label>
+            <div class="ro">${CATALOG.slice(0,3).map(c=>c.pn).join(" · ")}</div></div>
+        `}
+        <div><button class="btn primary" data-act="sale-submit">Submit bid →</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Bids in flight</h3>
+      <div class="pad">
+        <table class="sheet">
+          <thead><tr><th>Bid</th><th>Account</th><th>Tag</th><th>Assigned</th><th>Status</th></tr></thead>
+          <tbody>${mine.map(b=>`<tr>
+            <td class="mono">${b.id}</td><td>${bidAcct(b).name}</td>
+            <td>${b.type==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill info">RPG</span>`}</td>
+            <td>${b.assignedTo}</td>
+            <td>${statusPill(b.status)}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L1 · Repricing · Pricer */
+function vwRepPricer(){
+  const queue = S.bids.filter(b=>b.assignedTo==="Pricer");
+  const cur = S.sel.pricerBid ? S.bids.find(b=>b.id===S.sel.pricerBid) : null;
+  return `
+  <p class="lede"><b>Layer 1 — Repricing · Pricer.</b> Open an RPG bid and run the automated calc. It returns the ref bid used, the original price, memory / SSD config, and flags special CPUs (e.g. RTX) for a manual line. Every line gets its own margin — then approve, or send to the Profit Manager.</p>
+  <div class="board">
+    <div>
+      <div class="tiny" style="margin-bottom:8px">RPG queue · ${queue.length}</div>
+      <div class="blist">
+        ${queue.map(b=>{
+          const a=bidAcct(b); const sel=S.sel.pricerBid===b.id;
+          const c = b.status==="approved"?"green":b.status==="sent-to-PM"?"yellow":"blue";
+          return `<div class="brow ${c} ${sel?"sel":""}" data-act="pick-bid" data-id="${b.id}">
+            <span class="stripe"></span>
+            <span><span class="nm">${a.name}</span><span class="meta">${b.id} · ${b.lines.length} lines · ${b.priced?(bidMargin(b)!=null?bidMargin(b)+"% blended":"needs manual line"):"not priced"}</span></span>
+            <span>${statusPill(b.status)}</span></div>`;
+        }).join("") || `<div class="callout">Queue empty.</div>`}
+      </div>
+    </div>
+    ${cur? pricerDetail(cur) : `<div class="bdetail"><div class="dbody"><div class="callout">← pick a bid from the queue.</div></div></div>`}
+  </div>`;
+}
+function pricerDetail(b){
+  const a=bidAcct(b);
+  const steps=[
+    ["Bid + comment auto-ingested", `Bid ${b.id} from LBP · comment parsed`],
+    ["Auto-fetch ref bid + original price", `see line table`],
+    ["Auto-read memory / SSD config", `DDR5 / G4 · G4P resolved per PN`],
+    ["Auto-match PN → catalog model", `flags special CPU lines for manual calc`],
+    ["Apply guidance uplift · line-by-line margin", `GTP FY26 Aug · +10%`]
+  ];
+  const running=b.calcRunning;
+  const checks = steps.map((s,i)=>`
+    <div class="check ${running?(i<2?"pass":"run"):(b.priced?"pass":"")}">
+      <span class="ico">${running?(i<2?"✓":""):(b.priced?"✓":i+1)}</span>
+      <span><span class="lab">${s[0]}</span><span class="det">${b.priced||running? s[1] : "&nbsp;"}</span></span>
+    </div>`).join("");
+
+  const rows = b.lines.map((l,i)=>{
+    const mg=lineMargin(l), p=linePrice(l);
+    const flagCell = l.flag
+      ? `<input class="mono" style="width:96px;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);text-align:right" placeholder="manual $" data-line="${i}" value="${l.manualPrice||""}">`
+      : money(p);
+    return `<tr class="${l.flag?"lineflag":""}">
+      <td class="mono">${l.pn}<div class="tiny">${l.family}</div></td>
+      <td class="mono">${l.refBid}</td>
+      <td class="num">${money(l.base)}</td>
+      <td class="mono">${l.memory}<div class="tiny">${l.ssd}</div></td>
+      <td class="mono">${l.cpu}${l.flag?` <span class="pill bad">RTX · manual</span>`:""}</td>
+      <td class="num">${b.priced?flagCell:"—"}</td>
+      <td class="num">${b.priced? (mg==null?`<span class="pill warn">manual</span>`:`${mg.toFixed(1)}%`) : "—"}</td>
+    </tr>`;
+  }).join("");
+  const bm=bidMargin(b);
+  const canDecide = b.priced && b.status!=="approved" && b.status!=="sent-to-PM";
+
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name}</h3><div class="sub">${b.id} · RPG · submitted by ${b.submittedBy} · ${a.geo} / ${a.vertical}</div></div>
+    <div class="dbody">
+      <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Automated calc <span class="plat">${b.id}</span></div>
+        <div class="body"><div class="checks">${checks}</div></div></div>
+      ${!b.priced ? `<div><button class="btn primary" data-act="run-calc" data-id="${b.id}" ${b.calcRunning?"disabled":""}>${b.calcRunning?"Calculating…":"▶ Run automated calc"}</button></div>` : `
+      <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Line-by-line result <span class="plat">${b.lines.length} lines</span></div>
+        <div class="body" style="overflow-x:auto">
+          <table class="sheet">
+            <thead><tr><th>PN / model</th><th>Ref bid</th><th class="num">Orig. price</th><th>Memory / SSD</th><th>CPU</th><th class="num">New price</th><th class="num">Margin</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr class="total"><td colspan="6">Blended bid margin</td><td class="num">${bm==null?`<span class="pill warn">enter manual line</span>`:bm.toFixed(1)+"%"}</td></tr></tfoot>
+          </table>
+        </div></div>
+      <div class="field"><label>Pricer note (to PM, if escalating)</label>
+        <textarea data-input="pricerNote" data-id="${b.id}" placeholder="Why this needs a PM call…">${esc(b.pricerNote)}</textarea></div>
+      ${b.status==="approved"?`<div class="callout good">✓ Approved & written back. Account is now waiting for Sale to confirm the contract and submit the RPG tracker form.</div>`:""}
+      ${b.status==="sent-to-PM"?`<div class="callout warn">→ Sent to Profit Manager for a margin call. See the Profit Manager role.</div>`:""}
+      ${canDecide? `<div style="display:flex;gap:10px">
+        <button class="btn ok" data-act="pricer-approve" data-id="${b.id}">✓ Approve directly</button>
+        <button class="btn danger" data-act="pricer-escalate" data-id="${b.id}">→ Send to Profit Manager</button>
+      </div>`:""}
+      `}
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L1 · Repricing · PM */
+function vwRepPM(){
+  const escalated = S.bids.filter(b=>b.assignedTo==="PM");
+  const cur = S.sel.pricerBid ? S.bids.find(b=>b.id===S.sel.pricerBid && b.assignedTo==="PM") : null;
+  return `
+  <p class="lede"><b>Layer 1 — Repricing · Profit Manager.</b> The PM handles a share of RPG bids but spends most time on other pricing (transition, NPI, deal-specific) handled outside this tool. Here the platform covers two things: <b>margin calls escalated by Pricers</b>, and <b>exception intake</b> (the form Sale fills flows straight to Layer 2 → the Tracking board).</p>
+  <div class="board">
+    <div>
+      <div class="tiny" style="margin-bottom:8px">Escalated RPG bids · ${escalated.length}</div>
+      <div class="blist">
+        ${escalated.map(b=>{
+          const a=bidAcct(b); const sel=S.sel.pricerBid===b.id;
+          const c=b.status==="pm-reviewed"?"green":"yellow";
+          return `<div class="brow ${c} ${sel?"sel":""}" data-act="pick-bid" data-id="${b.id}">
+            <span class="stripe"></span>
+            <span><span class="nm">${a.name}</span><span class="meta">${b.id} · ${bidMargin(b)!=null?bidMargin(b)+"% blended":"—"} · from ${b.submittedBy}</span></span>
+            <span>${statusPill(b.status)}</span></div>`;
+        }).join("") || `<div class="callout">Nothing escalated.</div>`}
+      </div>
+      <div class="card" style="margin-top:12px;box-shadow:none">
+        <h3>Other pricing <span class="plat">outside this tool</span></h3>
+        <div class="pad tiny">Transition pricing · NPI quotes · deal-specific bids — the majority of PM workload, handled in LPS / CFE. Not shown here.</div>
+      </div>
+    </div>
+    ${cur? pmRepDetail(cur) : `<div class="bdetail"><div class="dbody"><div class="callout">← pick an escalated bid, or go to the exception intake list under <b>Tracking · Profit Manager</b>.</div>
+      ${S.accounts.some(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake")?`<div class="callout yellow" style="margin-top:10px">${S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake").length} exception intake(s) waiting on the Tracking board.</div>`:""}
+    </div></div>`}
+  </div>`;
+}
+function pmRepDetail(b){
+  const a=bidAcct(b);
+  const rows=b.lines.map(l=>`<tr><td class="mono">${l.pn}</td><td class="num">${money(l.base)}</td><td class="num">${money(l.newPrice)}</td><td class="num">${(lineMargin(l)||0).toFixed(1)}%</td></tr>`).join("");
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name}</h3><div class="sub">${b.id} · escalated by ${b.submittedBy}</div></div>
+    <div class="dbody">
+      <div class="callout warn"><b>Pricer's note:</b> ${esc(b.pricerNote||"—")}</div>
+      <table class="sheet"><thead><tr><th>PN</th><th class="num">Orig.</th><th class="num">New</th><th class="num">Margin</th></tr></thead><tbody>${rows}</tbody>
+        <tfoot><tr class="total"><td colspan="3">Blended</td><td class="num">${bidMargin(b)}%</td></tr></tfoot></table>
+      ${b.status==="pm-reviewed"? `<div class="callout good">✓ Resolved by PM — bid finalized, no Director/CFO needed (margin/SSD special case).</div>` : `
+      <div class="field"><label>PM resolution</label><textarea data-input="pmResolve" data-id="${b.id}" placeholder="e.g. approve a one-notch discount to hold the renewal; document rationale.">Hold at guidance minus one tier for the renewal tranche; account history supports it. No escalation.</textarea></div>
+      <button class="btn ok" data-act="pm-resolve-bid" data-id="${b.id}">Resolve directly → bid finalized</button>`}
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L2 · Tracking · Sale */
+function vwTrkSale(){
+  const book = S.saleBook;
+  const list = S.accounts.filter(a=>a.mgr===book);
+  const onRpg = list.filter(a=>a.track==="RPG").length;
+  const inExc = list.filter(a=>a.track==="Exception").length;
+  const needConfirm = list.filter(a=>a.needsSaleConfirm);
+  const mgrOpts = SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("");
+  const stageLabel=a=>{
+    if(a.track!=="Exception") return "—";
+    const st=a.exception?.stage;
+    return st==="PM-intake"?"PM compiling case"
+      :st==="Director-review"?"At Director/CFO"
+      :st==="Approved"?"Approved":st==="Rejected"?"Rejected":"—";
+  };
+  const confAcct = S.sel.saleAcct && needConfirm.find(a=>a.id===S.sel.saleAcct);
+  return `
+  <p class="lede"><b>Layer 2 — Tracking · Sale.</b> After the Pricer finishes, Sale confirms the contract and submits the tracker form (LBP plug-in). RPG asks four questions; Exception is just a tag — the rest follows the PM flow. The dashboard shows every account in a manager's book: who last updated it, when, its lane, and how far an exception has progressed.</p>
+
+  <div class="statgrid" style="margin-bottom:16px">
+    <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
+    <div class="stat"><div class="v">${onRpg}</div><div class="l">On RPG lane</div></div>
+    <div class="stat"><div class="v">${inExc}</div><div class="l">In exception</div></div>
+    <div class="stat"><div class="v">${needConfirm.length}</div><div class="l">Awaiting your confirm</div></div>
+  </div>
+
+  <div class="cols2">
+    <div class="card">
+      <h3>Sale dashboard — account book <span class="plat">from Main Table</span></h3>
+      <div class="pad">
+        <div class="field" style="max-width:220px;margin-bottom:12px"><label>Sale Manager</label>
+          <select data-input="saleBook">${mgrOpts}</select></div>
+        <table class="sheet">
+          <thead><tr><th>Account</th><th>Lane</th><th>Last updated by</th><th>When</th><th>Exception progress</th></tr></thead>
+          <tbody>${list.map(a=>`<tr class="click" data-act="pick-sale" data-id="${a.id}">
+            <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread result</span>`:""}</td>
+            <td>${a.track==="RPG"?`<span class="pill info">RPG</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill mut">not set</span>`}</td>
+            <td class="mono">${a.lastBy||"—"}</td>
+            <td class="mono">${a.lastAt||"—"}</td>
+            <td>${stageLabel(a)}</td></tr>`).join("")}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Confirm &amp; submit tracker form <span class="plat">LBP plug-in</span></h3>
+      <div class="pad stack">
+        ${needConfirm.length? `
+          <div class="field"><label>Account (Pricer done — ready to confirm)</label>
+            <select data-input="saleAcct">${needConfirm.map(a=>`<option value="${a.id}" ${confAcct&&confAcct.id===a.id?"selected":""}>${a.name}</option>`).join("")}</select></div>
+          ${confAcct? saleConfirmForm(confAcct) : `<div class="callout">Pick an account above.</div>`}
+        ` : `<div class="callout good">Nothing waiting on you. When a Pricer approves an RPG bid, or an exception is decided, the account shows up here.</div>`}
+      </div>
+    </div>
+  </div>
+
+  ${S.sel.saleAcct && A(S.sel.saleAcct) && A(S.sel.saleAcct).exception ? saleExcResult(A(S.sel.saleAcct)) : ""}`;
+}
+function saleConfirmForm(a){
+  const isExc = a.track==="Exception" || S._confirmType==="Exception";
+  return `
+    <div class="field"><label>Confirm — which lane did the customer agree to?</label>
+      <div class="segfield" data-input="confirmType">
+        <button data-val="RPG" aria-pressed="${!isExc}">RPG · per guidance</button>
+        <button data-val="Exception" aria-pressed="${isExc}">Exception</button>
+      </div></div>
+    ${isExc? `
+      <div class="callout warn">Just tag it Exception — the intake goes to the Profit Manager, then Director/CFO. You'll get an unread notification when it's decided.</div>
+      <button class="btn primary" data-act="sale-confirm-exc" data-id="${a.id}">Mark as Exception &amp; submit</button>
+    ` : `
+      <div class="grid2">
+        <div class="field"><label>Q1 · Is it an Active account?</label>
+          <select data-input="q_active"><option>Yes</option><option>No</option></select></div>
+        <div class="field"><label>Q2 · Followed full guidance?</label>
+          <select data-input="q_guidance"><option>Full</option><option>Partial</option><option>None</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Q3 · Effective date</label>
+          <input type="date" data-input="q_eff" value="2026-02-01"></div>
+        <div class="field"><label>Q4 · LNL in place?</label>
+          <select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
+      </div>
+      <button class="btn primary" data-act="sale-confirm-rpg" data-id="${a.id}">Submit RPG tracker form</button>
+    `}`;
+}
+function saleExcResult(a){
+  if(!a.exception || !a.exception.decision) return "";
+  const ap=a.exception.decision==="Approved";
+  return `<div class="card" style="margin-top:16px">
+    <h3>Exception result — ${a.name}</h3>
+    <div class="pad">
+      <div class="callout ${ap?"good":"bad"}"><b>${a.exception.decision}.</b> ${esc(a.exception.decisionNote)}</div>
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L2 · Tracking · PM */
+function vwTrkPM(){
+  const board=sortedBoard("pm");
+  const sel = S.sel.pmAcct ? A(S.sel.pmAcct) : (board[0]&&board[0].a);
+  return `
+  <p class="lede"><b>Layer 2 — Tracking · Profit Manager.</b> The list is colour-coded: <b>yellow</b> = exception waiting on you, <b>blue</b> = RPG, <b>green</b> = exception approved, <b>red</b> = rejected. Yellow sorts to the top. Open an account to get the exception notification, fill its past performance, and submit the application — then assign the bid to Director/CFO in LBP.</p>
+  ${boardLegend()}
+  <div class="board">
+    <div class="blist">${board.map(({a,c})=>brow(a,c,"pm")).join("")}</div>
+    ${sel? pmTrkDetail(sel) : `<div class="bdetail"><div class="dbody"><div class="callout">No accounts in a lane yet.</div></div></div>`}
+  </div>`;
+}
+function pmTrkDetail(a){
+  const e=a.exception;
+  const isYellow = a.track==="Exception" && e && e.stage==="PM-intake";
+  const decided = e && e.decision;
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name} ${a.unread.pm?`<span class="pill bad">● unread</span>`:""}</h3>
+      <div class="sub">${a.geo} · ${a.vertical} · GAM ${a.gam} · Sale Mgr ${a.mgr} · PM ${PM_OF[a.mgr]}</div></div>
+    <div class="dbody">
+      ${a.unread.pm? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>Director/CFO ${e.decision}.</b> ${esc(e.decisionNote)}</div>`:""}
+      <div class="grid3">
+        <div class="field"><label>Lane</label><div class="ro">${a.track||"—"}</div></div>
+        <div class="field"><label>Active</label><div class="ro">${a.active?"Yes":"No"}</div></div>
+        <div class="field"><label>Guidance</label><div class="ro">${a.guidance||"missing"}</div></div>
+      </div>
+
+      ${a.track!=="Exception" ? `
+        <div class="callout info">This account is on the <b>${a.track}</b> lane. A PM can flag it as an exception directly if the customer situation warrants it.</div>
+        <button class="btn ghost" data-act="pm-flag-exc" data-id="${a.id}">Flag as Exception</button>
+      ` : isYellow ? `
+        <div class="callout yellow"><b>Exception notification.</b> ${e.submittedBy? `Flagged by ${e.submittedBy}.` : "Flagged from Sale's submission."} Compile the case for Director/CFO.</div>
+        <div class="field"><label>Account past performance (for the CFO)</label>
+          <textarea data-input="perf" data-id="${a.id}" placeholder="Guidance history, renewal risk, competitive context, volume…">${esc(e.performance)}</textarea></div>
+        <div class="field"><label>Materials</label>
+          <div class="matlist">
+            ${(e.materials.length?e.materials:["(none attached)"]).map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")}
+          </div>
+          <div style="margin-top:8px"><button class="btn ghost sm" data-act="pm-attach" data-id="${a.id}">+ Attach standard bridge</button></div>
+        </div>
+        <div class="callout">Submitting writes the exception to the Tracker and moves the account to Director/CFO. Then assign the bid in LBP.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" data-act="pm-submit-exc" data-id="${a.id}">Submit exception application →</button>
+        </div>
+      ` : e.stage==="Director-review" ? `
+        <div class="callout warn">Submitted to Director/CFO on ${e.submittedAt} by ${e.submittedBy}. Waiting on decision.</div>
+        <div class="field"><label>Past performance (submitted)</label><div class="callout">${esc(e.performance)}</div></div>
+        <div class="matlist">${e.materials.map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")}</div>
+        <button class="btn ghost sm" data-act="open-lbp" data-id="${a.id}">Assign bid to Director/CFO in LBP</button>
+      ` : `
+        <div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>${e.decision}.</b> ${esc(e.decisionNote)}</div>
+        <div class="field"><label>Past performance</label><div class="callout">${esc(e.performance)}</div></div>
+      `}
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L2 · Tracking · Director/CFO */
+function vwTrkDir(){
+  const board=sortedBoard("director");
+  const sel = S.sel.dirAcct ? A(S.sel.dirAcct) : (board.find(x=>x.c==="yellow")||board[0]||{}).a;
+  return `
+  <p class="lede"><b>Layer 2 — Tracking · Director / CFO.</b> Same board as the PM. <b>Yellow</b> = exception awaiting your decision. The right side shows the PM's full submission; the calculator (backed by a baseline data source) estimates the total Geo/GA impact to support the call. On decision, the result flows back to the PM and Sale as an unread notification.</p>
+  ${boardLegend()}
+  <div class="board">
+    <div class="blist">${board.map(({a,c})=>brow(a,c,"director")).join("")}</div>
+    ${sel? dirDetail(sel) : `<div class="bdetail"><div class="dbody"><div class="callout">Nothing to review.</div></div></div>`}
+  </div>`;
+}
+function dirDetail(a){
+  const e=a.exception;
+  const yellow = a.track==="Exception" && e && e.stage==="Director-review";
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name}</h3>
+      <div class="sub">${a.geo} · ${a.vertical} · GAM ${a.gam} · submitted by ${e?.submittedBy||"—"} ${e?.submittedAt||""}</div></div>
+    <div class="dbody">
+      ${!e ? `<div class="callout">Not an exception — nothing to decide.</div>` : `
+      <div class="grid3">
+        <div class="field"><label>Lane</label><div class="ro">${a.track}</div></div>
+        <div class="field"><label>Active</label><div class="ro">${a.active?"Yes":"No"}</div></div>
+        <div class="field"><label>Guidance</label><div class="ro">${a.guidance||"missing"}</div></div>
+      </div>
+      <div class="field"><label>Profit Manager — account past performance</label>
+        <div class="callout">${esc(e.performance||"—")}</div></div>
+      <div class="field"><label>Materials submitted</label>
+        <div class="matlist">${(e.materials||[]).map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")||`<div class="tiny">none</div>`}</div></div>
+      <div><button class="btn ghost" data-act="open-calc" data-id="${a.id}">🧮 Open impact calculator</button>
+        ${e.calc? `<span class="pill info" style="margin-left:8px">TMCGP% ${e.calc.totPct.toFixed(2)}% · ${pp(e.calc.bwPct)} vs MT</span>`:""}</div>
+      ${e.decision? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>${e.decision}.</b> ${esc(e.decisionNote)}</div>` : yellow? `
+        <div class="field"><label>Decision note</label>
+          <textarea data-input="dirNote" data-id="${a.id}" placeholder="Rationale — this flows back to PM and Sale.">${esc(e.decisionNote||"")}</textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn ok" data-act="dir-approve" data-id="${a.id}">✓ Approve exception</button>
+          <button class="btn danger" data-act="dir-reject" data-id="${a.id}">✕ Reject</button>
+        </div>` : `<div class="callout warn">Waiting on the PM to submit this exception.</div>`}
+      `}
+    </div>
+  </div>`;
+}
+
+/* ============================================================ L3 · Reporting */
+function vwReport(kind){
+  const R = computeReport(S.accounts);
+  const uplTable = `
+    <table class="sheet">
+      <thead><tr><th>Bucket</th><th class="num">Accounts</th><th class="num">% of active</th></tr></thead>
+      <tbody>
+        ${upRow("Full uplift",R.b.full,R.active)}
+        ${upRow("Partial uplift",R.b.partial,R.active)}
+        ${upRow("No uplift",R.b.none,R.active)}
+        ${upRow("Missing input",R.b.missing,R.active)}
+      </tbody>
+      <tfoot><tr class="total"><td>Active total</td><td class="num">${R.active}</td><td class="num">100%</td></tr></tfoot>
+    </table>`;
+  const excTable = `
+    <table class="sheet">
+      <thead><tr><th>Account</th><th>Geo / Vertical</th><th>Stage</th><th>Decision</th></tr></thead>
+      <tbody>${R.exceptions.map(a=>`<tr>
+        <td><b>${a.name}</b></td><td class="mono">${a.geo} / ${a.vertical}</td>
+        <td>${a.exception?.stage||"—"}</td>
+        <td>${a.exception?.decision? `<span class="pill ${a.exception.decision==="Approved"?"good":"bad"}">${a.exception.decision}</span>`:`<span class="pill yellow">pending</span>`}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody>
+    </table>`;
+  const missTable = `
+    <table class="sheet">
+      <thead><tr><th>Account</th><th>Geo / Vertical</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
+      <tbody>${R.missing.map(a=>`<tr>
+        <td><b>${a.name}</b></td><td class="mono">${a.geo} / ${a.vertical}</td><td>${a.mgr}</td>
+        <td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody>
+    </table>`;
+
+  const chart = kind==="GA" ? decompTree(R) : verticalBreakdown();
+
+  return `
+  <p class="lede"><b>Layer 3 — Reporting.</b> Tracking lives in PowerApps; this connects straight to the existing Power BI. ${kind==="GA"?"The <b>GA</b> page decomposes the whole book by status.":"The <b>GTP</b> page breaks the same book down by vertical."} No manual data pull, no data-source swap.</p>
+
+  <div class="statgrid" style="margin-bottom:16px">
+    <div class="stat"><div class="v">${R.total}</div><div class="l">GA accounts</div></div>
+    <div class="stat"><div class="v">${R.active}</div><div class="l">Active</div><div class="s">${pct(R.active,R.total)}</div></div>
+    <div class="stat"><div class="v">${R.notActive}</div><div class="l">Not active</div><div class="s">${pct(R.notActive,R.total)}</div></div>
+    <div class="stat"><div class="v">${R.b.missing}</div><div class="l">Missing input</div><div class="s">${pct(R.b.missing,R.active)} of active</div></div>
+    <div class="stat"><div class="v">${R.exceptions.length}</div><div class="l">Exceptions</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h3>${kind==="GA"?"GA account decomposition":"GTP — accounts by vertical"} <span class="plat">Power BI · live from Main Table</span></h3>
+    <div class="pad cols2" style="align-items:start">
+      <div style="overflow-x:auto">${chart}</div>
+      <div>${uplTable}</div>
+    </div>
+  </div>
+
+  <div class="cols2">
+    <div class="card"><h3>Exception accounts</h3><div class="pad">${excTable}</div></div>
+    <div class="card"><h3>Missing input</h3><div class="pad">${missTable}</div></div>
+  </div>`;
+}
+function upRow(label,n,base){
+  const colors={"Full uplift":"var(--good)","Partial uplift":"var(--warn)","No uplift":"var(--bad)","Missing input":"var(--border-strong)"};
+  return `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${colors[label]};margin-right:7px"></span>${label}</td><td class="num">${n}</td><td class="num">${pct(n,base)}</td></tr>`;
+}
+const pct=(n,d)=>d? Math.round(n/d*100)+"%" : "0%";
+
+function decompTree(R){
+  const bar=(v,max,color)=>`<div class="tn-bar"><i style="width:${max?Math.round(v/max*100):0}%;background:${color}"></i></div>`;
+  const maxTop=Math.max(R.active,R.notActive,1);
+  const maxB=Math.max(R.b.full,R.b.partial,R.b.none,R.b.missing,1);
+  return `<div class="tree">
+    <div class="tcol">
+      <div class="tnode root"><div class="tn-l">GA portfolio</div><div class="tn-v">${R.total}</div></div>
+    </div>
+    <div class="tcol links"><div class="lwrap"><span class="link"></span><span class="link"></span></div></div>
+    <div class="tcol">
+      <div class="tnode"><div class="tn-l">Active</div><div class="tn-v">${R.active}</div>${bar(R.active,maxTop,"var(--good)")}</div>
+      <div class="tnode"><div class="tn-l">Not active</div><div class="tn-v">${R.notActive}</div>${bar(R.notActive,maxTop,"var(--muted)")}</div>
+    </div>
+    <div class="tcol links"><div class="lwrap"><span class="link"></span></div></div>
+    <div class="tcol">
+      <div class="tnode"><div class="tn-l">Full uplift</div><div class="tn-v">${R.b.full}</div>${bar(R.b.full,maxB,"var(--good)")}</div>
+      <div class="tnode"><div class="tn-l">Partial uplift</div><div class="tn-v">${R.b.partial}</div>${bar(R.b.partial,maxB,"var(--warn)")}</div>
+      <div class="tnode"><div class="tn-l">No uplift</div><div class="tn-v">${R.b.none}</div>${bar(R.b.none,maxB,"var(--bad)")}</div>
+      <div class="tnode"><div class="tn-l">Missing input</div><div class="tn-v">${R.b.missing}</div>${bar(R.b.missing,maxB,"var(--border-strong)")}</div>
+    </div>
+  </div>`;
+}
+function verticalBreakdown(){
+  const verts=[...new Set(S.accounts.map(a=>a.vertical))];
+  return `<div class="treemap">`+verts.map(v=>{
+    const sub=S.accounts.filter(a=>a.vertical===v);
+    const R=computeReport(sub);
+    const seg=(n,color)=>n?`<i style="width:${n/Math.max(R.active,1)*100}%;background:${color}"></i>`:"";
+    return `<div class="tm">
+      <h4>${v} <span>${sub.length} acct · ${R.active} active</span></h4>
+      <div class="stack">
+        ${seg(R.b.full,"var(--good)")}${seg(R.b.partial,"var(--warn)")}${seg(R.b.none,"var(--bad)")}${seg(R.b.missing,"var(--border-strong)")}
+      </div>
+      <div class="key">
+        <span><b style="background:var(--good)"></b>Full ${R.b.full}</span>
+        <span><b style="background:var(--warn)"></b>Partial ${R.b.partial}</span>
+        <span><b style="background:var(--bad)"></b>None ${R.b.none}</span>
+        <span><b style="background:var(--border-strong)"></b>Missing ${R.b.missing}</span>
+      </div>
+    </div>`;
+  }).join("")+`</div>`;
+}
+
+/* ============================================================ small shared bits */
+function boardLegend(){
+  return `<div class="legend">
+    <span><i style="background:var(--yellow)"></i> exception — needs action</span>
+    <span><i style="background:var(--info)"></i> RPG</span>
+    <span><i style="background:var(--good)"></i> exception approved</span>
+    <span><i style="background:var(--bad)"></i> exception rejected</span>
+    <span><i style="background:var(--border-strong)"></i> in flight elsewhere</span>
+  </div>`;
+}
+function brow(a,c,role){
+  const sel = (role==="pm"? S.sel.pmAcct : S.sel.dirAcct) === a.id;
+  const unread = role==="pm"? a.unread.pm : (role==="director"? false : false);
+  return `<div class="brow ${c} ${sel?"sel":""}" data-act="pick-board" data-role="${role}" data-id="${a.id}">
+    <span class="stripe"></span>
+    <span><span class="nm">${a.name}${unread?`<span class="unread"></span>`:""}</span>
+      <span class="meta">${a.geo} · ${a.vertical} · ${a.track==="Exception"? (a.exception?.stage||"") : a.track}</span></span>
+    <span>${a.track==="Exception" && a.exception?.decision? `<span class="pill ${a.exception.decision==="Approved"?"good":"bad"}">${a.exception.decision}</span>` : a.track==="Exception"? `<span class="pill yellow">exc</span>`:`<span class="pill info">RPG</span>`}</span>
+  </div>`;
+}
+function statusPill(s){
+  const map={assigned:"warn",priced:"info",approved:"good","sent-to-PM":"warn","pm-reviewed":"good",
+    Submitted:"warn"};
+  const label={assigned:"assigned",priced:"priced","sent-to-PM":"with PM","pm-reviewed":"resolved"}[s]||s;
+  return `<span class="pill ${map[s]||"mut"}">${label}</span>`;
+}
+
+/* ============================================================ overlays */
+function renderOverlay(){
+  const o=$("#overlay");
+  if(!S.overlay){ o.innerHTML=""; return; }
+  if(S.overlay==="log"){ o.innerHTML=logDrawerHTML(); }
+  else if(S.overlay.startsWith("calc:")){ o.innerHTML=calcModalHTML(S.overlay.slice(5)); }
+  else if(S.overlay.startsWith("lbp:")){ o.innerHTML=lbpModalHTML(S.overlay.slice(4)); }
+}
+function logDrawerHTML(){
+  return `<div class="scrim" data-act="close-overlay"><div class="drawer" id="logDrawer" onclick="event.stopPropagation()">
+    <div class="dh">Activity log <span class="tiny" style="font-weight:400">· = writes to Tracker</span><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="dc" id="logBody"></div>
+  </div></div>`;
+}
+function renderLogDrawer(){
+  const b=$("#logBody"); if(!b) return;
+  b.innerHTML = S.log.map(l=>`<div class="li ${l.acc?"acc":""}"><time>${l.t}</time><span>${l.html}</span></div>`).join("");
+}
+function calcModalHTML(accId){
+  const a=A(accId); if(!a) return "";
+  const base=BASELINE.find(x=>x.geo===a.geo && x.vertical===a.vertical) || BASELINE.find(x=>x.geo===a.geo) || BASELINE[0];
+  const C=S.calc;
+  const rows=C.rows.map((r,i)=>`<tr>
+    <td class="tiny" style="text-align:center">${i+1}</td>
+    <td><input data-crow="u" data-i="${i}" value="${r.u}"></td>
+    <td><input data-crow="rev" data-i="${i}" value="${r.rev}"></td>
+    <td><input data-crow="t" data-i="${i}" value="${r.t}"></td>
+    <td><button class="del" data-act="calc-del" data-i="${i}">✕</button></td></tr>`).join("");
+  let summary=`<div class="callout">Enter the new-deal lines and press Calculate.</div>`;
+  if(C.out && C.acctId===accId){
+    const k=C.out;
+    summary=`<div class="card" style="box-shadow:none"><h3>Impact vs baseline <span class="plat">source: ${base.geo} · ${base.vertical}</span></h3><div class="pad">
+      <table class="kpi-table">
+        <tr><th></th><th>Base</th><th>New deal</th><th>Total</th><th>Δ to total</th><th>B(W) vs MT</th></tr>
+        <tr><td class="metric">REV</td><td>${m2(k.baseRev)}</td><td>${m2(k.newRev)}</td><td>${m2(k.totRev)}</td><td>${m2(k.newRev)}</td><td>–</td></tr>
+        <tr><td class="metric">TMCGP</td><td>${m2(k.baseTmcgp)}</td><td>${m2(k.newTmcgp)}</td><td>${m2(k.totTmcgp)}</td><td>${m2(k.newTmcgp)}</td><td>–</td></tr>
+        <tr><td class="metric">TMCGP%</td><td>${k.basePct.toFixed(2)}%</td><td>${k.newPct.toFixed(2)}%</td><td>${k.totPct.toFixed(2)}%</td><td>${pp(k.totPct-k.basePct)}</td><td>${pp(k.bwPct)}</td></tr>
+      </table>
+      <div class="tiny" style="margin-top:7px">B(W) vs MT = total with new deal − target (MT ${MT_TARGET.toFixed(1)}%) · pp = percentage points</div>
+    </div></div>`;
+  }
+  return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Impact calculator — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mb">
+      <div class="callout info">Backed by a baseline data source. For <b>${a.geo} · ${a.vertical}</b> it pulls: REV ${m2(base.rev)}, TMCGP ${m2(base.tmcgp)} (${(base.tmcgp/base.rev*100).toFixed(2)}%).</div>
+      <div class="card" style="box-shadow:none"><h3>Baseline data source</h3><div class="pad" style="overflow-x:auto">
+        <table class="sheet"><thead><tr><th>Geo</th><th>Vertical</th><th class="num">REV</th><th class="num">TMCGP</th><th class="num">TMCGP%</th></tr></thead>
+        <tbody>${BASELINE.map(x=>`<tr${(x===base)?' style="background:var(--info-bg)"':''}><td>${x.geo}</td><td>${x.vertical}</td><td class="num">${m2(x.rev)}</td><td class="num">${m2(x.tmcgp)}</td><td class="num">${(x.tmcgp/x.rev*100).toFixed(2)}%</td></tr>`).join("")}</tbody></table>
+      </div></div>
+      <div class="card" style="box-shadow:none"><h3>New-deal lines</h3><div class="pad">
+        <table class="kpi-rows"><tr><th>#</th><th>Units</th><th>REV (USD)</th><th>TMCGP%</th><th></th></tr>${rows}</table>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn ghost sm" data-act="calc-add">+ Add line</button>
+          <button class="btn primary sm" data-act="calc-run" data-id="${accId}">Calculate</button>
+        </div>
+      </div></div>
+      ${summary}
+      <div class="callout">This snapshot attaches to the exception record for the approve/reject decision.</div>
+    </div>
+  </div></div>`;
+}
+function lbpModalHTML(accId){
+  const a=A(accId);
+  return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" style="max-width:520px" onclick="event.stopPropagation()">
+    <div class="mh"><h3>LBP — assign bid</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mb">
+      <div class="callout info">After submitting the exception in the Tracker, the last manual step is in LBP: assign this bid to Director/CFO for the formal approval record.</div>
+      <div class="grid2">
+        <div class="field"><label>Account</label><div class="ro">${a.name}</div></div>
+        <div class="field"><label>Assign to</label><div class="ro">Director / CFO</div></div>
+      </div>
+      <button class="btn primary" data-act="lbp-assign" data-id="${accId}">Assign in LBP →</button>
+    </div>
+  </div></div>`;
+}
+
+/* ============================================================ calc math */
+function runCalc(accId){
+  const a=A(accId);
+  const base=BASELINE.find(x=>x.geo===a.geo && x.vertical===a.vertical) || BASELINE.find(x=>x.geo===a.geo) || BASELINE[0];
+  const rows=S.calc.rows;
+  const newRev=rows.reduce((s,r)=>s+(+r.rev||0),0);
+  const newTmcgp=rows.reduce((s,r)=>s+(+r.rev||0)*(+r.t||0)/100,0);
+  const totRev=base.rev+newRev, totTmcgp=base.tmcgp+newTmcgp;
+  const basePct=base.tmcgp/base.rev*100;
+  const newPct=newRev? newTmcgp/newRev*100 : 0;
+  const totPct=totRev? totTmcgp/totRev*100 : 0;
+  const out={baseRev:base.rev,baseTmcgp:base.tmcgp,newRev,newTmcgp,totRev,totTmcgp,basePct,newPct,totPct,bwPct:totPct-MT_TARGET};
+  S.calc.out=out; S.calc.acctId=accId;
+  return out;
+}
+
+/* ============================================================ event binding */
+function bind(){
+  $$("[data-input]").forEach(node=>{
+    const key=node.dataset.input;
+    if(node.classList.contains("segfield")){
+      $$("button",node).forEach(bn=>bn.onclick=()=>segChange(key,bn.dataset.val));
+      return;
+    }
+    node.onchange=()=>inputChange(key,node.value,node);
+    if(node.tagName==="TEXTAREA") node.oninput=()=>inputChange(key,node.value,node,true);
+  });
+  $$("[data-line]").forEach(inp=>{
+    inp.oninput=()=>{
+      const b=S.bids.find(x=>x.id===S.sel.pricerBid); if(!b)return;
+      b.lines[+inp.dataset.line].manualPrice=inp.value.replace(/[^0-9.]/g,"");
+      // light re-render of just the footer margin would be nicer; keep simple:
+      const foot=inp.closest("table")?.querySelector("tfoot .num");
+      if(foot){ const bm=bidMargin(b); foot.innerHTML = bm==null?'<span class="pill warn">enter manual line</span>':bm.toFixed(1)+"%"; }
+    };
+  });
+  $$("[data-crow]").forEach(inp=>{
+    inp.oninput=()=>{ S.calc.rows[+inp.dataset.i][inp.dataset.crow]=inp.value.replace(/[^0-9.]/g,""); };
+  });
+  $$("[data-act]").forEach(node=>{
+    node.onclick=e=>{ const a=node.dataset.act; (ACT[a]||(()=>{}))(node.dataset, e, node); };
+  });
+  $$("[data-tab]").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; render(); });
+  $$("[data-role]").forEach(b=>{ if(b.dataset.act) return; b.onclick=()=>{ S.role[S.tab]=b.dataset.role; render(); }; });
+  if(S.overlay==="log") renderLogDrawer();
+}
+function segChange(key,val){
+  if(key==="saleType"){ S._saleType=val; render(); }
+  else if(key==="confirmType"){ S._confirmType=val; render(); }
+}
+function inputChange(key,val,node,silent){
+  switch(key){
+    case "saleAcct": S.sel.saleAcct=val; if(!silent) render(); break;
+    case "saleType": S._saleType=val; break;
+    case "excReason": S._excReason=val; break;
+    case "excAsk": S._excAsk=val; break;
+    case "saleBook": S.saleBook=val; S.sel.saleAcct=null; render(); break;
+    case "confirmType": S._confirmType=val; break;
+    case "q_active": S._qActive=val; break;
+    case "q_guidance": S._qGuid=val; break;
+    case "q_eff": S._qEff=val; break;
+    case "q_lnl": S._qLnl=val; break;
+    case "pricerNote": { const b=S.bids.find(x=>x.id===node.dataset.id); if(b)b.pricerNote=val; break; }
+    case "pmResolve": { S._pmResolve=val; break; }
+    case "perf": { const a=A(node.dataset.id); if(a&&a.exception)a.exception.performance=val; break; }
+    case "dirNote": { const a=A(node.dataset.id); if(a&&a.exception)a.exception.decisionNote=val; break; }
+  }
+}
+
+/* ============================================================ actions */
+const ACT = {
+  "open-log"(){ S.overlay="log"; renderOverlay(); bind(); },
+  "close-overlay"(){ S.overlay=null; render(); },
+  "reset-all"(){ S=freshState(); render(); toast("Demo reset."); },
+
+  "sale-submit"(){
+    const a=A(S.sel.saleAcct) || S.accounts[0];
+    const type=S._saleType||"RPG";
+    if(type==="RPG"){
+      const b=mkBid(nextBidId(), a.id, "RPG", a.sp.split("@")[0], "Pricer", [0,1,2]);
+      S.bids.unshift(b);
+      log(`Sale submitted <b>${a.name}</b> — tag <b>RPG</b>. Auto-assigned to Pricer as ${b.id}.`, true);
+      toast(`${a.name} · RPG → assigned to Pricer.`);
+    } else {
+      a.track="Exception";
+      a.exception={stage:"PM-intake", performance:S._excReason? `Reason: ${S._excReason}. Requested: ${S._excAsk||"—"}.` : "",
+        materials:[], submittedBy:a.sp.split("@")[0], submittedAt:stamp(), decision:null, decisionNote:"", calc:null};
+      const b=mkBid(nextBidId(), a.id, "Exception", a.sp.split("@")[0], "PM", [0,1]);
+      b.status="assigned"; S.bids.unshift(b);
+      log(`Sale submitted <b>${a.name}</b> — tag <b>Exception</b>. Intake form assigned to Profit Manager ${PM_OF[a.mgr]}.`, true);
+      toast(`${a.name} · Exception → Profit Manager's list.`);
+      S._excReason=""; S._excAsk="";
+    }
+    render();
+  },
+
+  "pick-bid"(d){ S.sel.pricerBid=d.id; render(); },
+  "run-calc"(d){
+    const b=S.bids.find(x=>x.id===d.id); if(!b) return;
+    b.calcRunning=true; render();
+    setTimeout(()=>{ b.calcRunning=false; b.priced=true; b.status="priced";
+      b.lines.forEach(l=>l.priced=true);
+      log(`Pricer ran the automated calc on <b>${bidAcct(b).name}</b> (${b.id}) — ${b.lines.length} lines priced${b.lines.some(l=>l.flag)?", 1 RTX line flagged for manual":""}.`);
+      render();
+    }, 950);
+  },
+  "pricer-approve"(d){
+    const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
+    b.status="approved"; b.pricerDecision="approve";
+    a.needsSaleConfirm=true;
+    log(`Pricer <b>approved</b> ${b.id} (${a.name}) — blended margin ${bidMargin(b)}%. Written back; Sale to confirm the contract.`, true);
+    toast(`${a.name} approved — waiting on Sale confirmation.`);
+    render();
+  },
+  "pricer-escalate"(d){
+    const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
+    b.status="sent-to-PM"; b.pricerDecision="escalate"; b.assignedTo="PM";
+    log(`Pricer <b>escalated</b> ${b.id} (${a.name}) to Profit Manager — ${esc(b.pricerNote||"margin call")}.`, true);
+    toast(`${a.name} sent to Profit Manager.`);
+    render();
+  },
+  "pm-resolve-bid"(d){
+    const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
+    b.status="pm-reviewed";
+    a.needsSaleConfirm=true;
+    log(`Profit Manager resolved ${b.id} (${a.name}) directly — bid finalized, no Director/CFO. ${esc(S._pmResolve||"")}`, true);
+    toast(`${a.name} resolved by PM — no escalation.`);
+    render();
+  },
+
+  "pick-sale"(d){ S.sel.saleAcct=d.id;
+    const a=A(d.id); if(a && a.unread.sale){ a.unread.sale=false; log(`Sale opened <b>${a.name}</b> — exception result read.`); }
+    render();
+  },
+  "sale-confirm-rpg"(d){
+    const a=A(d.id);
+    a.track="RPG"; a.active=(S._qActive||"Yes")==="Yes";
+    a.guidance=S._qGuid||"Full"; a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
+    a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
+    a.needsSaleConfirm=false;
+    log(`Sale confirmed <b>${a.name}</b> — RPG · ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}. Written to Sub Table.`, true);
+    toast(`${a.name} confirmed — RPG tracker form submitted.`);
+    S.sel.saleAcct=null; render();
+  },
+  "sale-confirm-exc"(d){
+    const a=A(d.id);
+    a.track="Exception";
+    a.exception=a.exception||{stage:"PM-intake",performance:"",materials:[],submittedBy:a.sp.split("@")[0],submittedAt:stamp(),decision:null,decisionNote:"",calc:null};
+    a.needsSaleConfirm=false;
+    log(`Sale marked <b>${a.name}</b> as an <b>Exception</b> — handed to Profit Manager ${PM_OF[a.mgr]}.`, true);
+    toast(`${a.name} tagged Exception.`);
+    S.sel.saleAcct=null; render();
+  },
+
+  "pick-board"(d){
+    if(d.role==="pm"){ S.sel.pmAcct=d.id; const a=A(d.id); if(a&&a.unread.pm){ a.unread.pm=false; log(`PM opened <b>${a.name}</b> — result read.`); } }
+    else { S.sel.dirAcct=d.id; }
+    render();
+  },
+  "pm-flag-exc"(d){
+    const a=A(d.id);
+    a.track="Exception";
+    a.exception={stage:"PM-intake", performance:"", materials:[], submittedBy:PM_OF[a.mgr], submittedAt:stamp(), decision:null, decisionNote:"", calc:null};
+    log(`Profit Manager ${PM_OF[a.mgr]} flagged <b>${a.name}</b> as an Exception directly.`, true);
+    render();
+  },
+  "pm-attach"(d){
+    const a=A(d.id); if(a&&a.exception && !a.exception.materials.includes("tmcgp_bridge_fy26.xlsx")) a.exception.materials.push("tmcgp_bridge_fy26.xlsx");
+    render();
+  },
+  "pm-submit-exc"(d){
+    const a=A(d.id); const e=a.exception;
+    if(!e.performance || e.performance.trim().length<8){ toast("Add the account's past performance first."); return; }
+    e.stage="Director-review"; e.submittedBy=PM_OF[a.mgr]; e.submittedAt=todayStamp();
+    if(!e.materials.length) e.materials.push("tmcgp_bridge_fy26.xlsx");
+    log(`Profit Manager ${e.submittedBy} submitted the <b>${a.name}</b> exception to Director/CFO — ${e.materials.length} materials attached.`, true);
+    toast(`${a.name} exception submitted to Director/CFO.`);
+    S.overlay="lbp:"+a.id; renderOverlay(); bind();
+  },
+  "open-lbp"(d){ S.overlay="lbp:"+d.id; renderOverlay(); bind(); },
+  "lbp-assign"(d){
+    const a=A(d.id);
+    log(`Bid for <b>${a.name}</b> assigned to Director/CFO in LBP.`, true);
+    toast(`${a.name} bid assigned in LBP.`);
+    S.overlay=null; render();
+  },
+
+  "open-calc"(d){ S.overlay="calc:"+d.id; S.calc.acctId=d.id; renderOverlay(); bind(); },
+  "calc-add"(){ S.calc.rows.push({u:0,rev:0,t:0}); renderOverlay(); bind(); },
+  "calc-del"(d){ S.calc.rows.splice(+d.i,1); if(!S.calc.rows.length)S.calc.rows.push({u:0,rev:0,t:0}); renderOverlay(); bind(); },
+  "calc-run"(d){
+    const out=runCalc(d.id);
+    log(`Impact calculator run for <b>${A(d.id).name}</b> — total TMCGP% ${out.totPct.toFixed(2)}%, ${pp(out.bwPct)} vs MT.`);
+    renderOverlay(); bind();
+  },
+
+  "dir-approve"(d){ dirDecide(d.id,"Approved"); },
+  "dir-reject"(d){ dirDecide(d.id,"Rejected"); }
+};
+
+function dirDecide(id,decision){
+  const a=A(id); const e=a.exception;
+  e.decision=decision; e.stage=decision;
+  if(S.calc.out && S.calc.acctId===id) e.calc={totPct:S.calc.out.totPct, bwPct:S.calc.out.bwPct};
+  a.unread.sale=true; a.unread.pm=true;
+  if(decision==="Approved" && !a.guidance) a.guidance="Partial";
+  log(`Director/CFO <b>${decision}</b> the <b>${a.name}</b> exception — ${esc(e.decisionNote||"no note")}. Synced back to PM and Sale (unread).`, true);
+  toast(`${a.name}: ${decision}. PM and Sale notified.`);
+  render();
+}
+function todayStamp(){ return "09-08 "+stamp().slice(0,5); }
+
+/* ============================================================ boot */
+render();
+</script>
+</body>
+</html>
