@@ -336,9 +336,11 @@ let bidSeq=5018, rptSeq=3302, clock=9*3600+14*60+3;
 const nextBid=()=>"B-"+(++bidSeq);
 const nextRpt=()=>"RPT-"+(++rptSeq);
 const typeLabel=t=>t==="RPG"?"Repricing":"Exception";
+const UPLIFTS=["Full Uplift","Partial Uplift","No Uplift"];
+const GUID_OF={"Full Uplift":"Full","Partial Uplift":"Partial","No Uplift":"None"};
 
 function acc(o){ return Object.assign({
-  active:true, track:null, guidance:null, effective:null, lnl:null,
+  active:true, track:null, guidance:null, uplift:null, caNo:null, effective:null, lnl:null,
   lastBy:null, lastAt:null, exception:null, unread:{sale:false,pm:false}
 }, o); }
 function mkLines(idx){ return idx.map(i=>{ const c=CATALOG[i];
@@ -357,28 +359,32 @@ function mkBid(o){ return {
 
 function freshState(){
   const A=[
-    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"RPG",active:true,guidance:"Full",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
-    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",track:"RPG",active:true,guidance:"Partial",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12"}),
+    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caNo:"CA-88401",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
+    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caNo:"CA-88510",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"09-02 08:55"}),
     acc({id:"puma",name:"Puma",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"RPG",active:true,guidance:null,lastBy:"t.koch",lastAt:"09-01 16:40"}),
-    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",track:"RPG",active:true,guidance:"Full",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"09-02 08:55"}),
-    acc({id:"rakuten",name:"Rakuten",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Retail",gam:"Arjun",track:"RPG",active:false,guidance:"None",lastBy:"w.tan",lastAt:"08-28 13:00"}),
+    acc({id:"rakuten",name:"Rakuten",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Retail",gam:"Arjun",track:"RPG",active:false,guidance:"None",uplift:"No Uplift",caNo:"CA-88033",lastBy:"w.tan",lastAt:"08-28 13:00"}),
     acc({id:"databricks",name:"Databricks",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"snowflake",name:"Snowflake",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"zara",name:"Zara",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena"}),
-    acc({id:"stripe",name:"Stripe",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"Exception",active:true,
+    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88702",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12",
+      exception:{stage:"Approved",reason:"Multi-year framework — customer holds at prior tier plus 5% for the first year.",ask:"5% uplift vs 10% guided",
+        performance:"Consistent full-guidance history until this renewal. Framework account, 4.2k units/yr, low churn risk.",
+        materials:["framework_cisco.pdf","tmcgp_bridge_fy26.xlsx"],submittedBy:"Victor",submittedAt:"09-03 12:40",
+        decision:"Approved",decisionNote:"5% partial uplift approved for year 1; step back to guidance in year 2.",calc:{totPct:13.9,bwPct:-0.1},draftSaved:true}}),
+    acc({id:"stripe",name:"Stripe",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"Exception",active:true,guidance:"None",uplift:"No Uplift",caNo:"CA-89101",
       exception:{stage:"PM-intake",reason:"Customer budget freeze for FY26 H1; asked to hold the Aug uplift.",ask:"0% uplift vs 10% guided",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
-    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",track:"Exception",active:true,
+    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-89010",
       exception:{stage:"PM-intake",reason:"Event-year volume spike; requests tiered pricing on incremental units.",ask:"6% uplift vs 10% guided on incremental",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
-    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",track:"Exception",active:true,
+    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88815",effective:"2026-04-01",
       exception:{stage:"Director-review",reason:"Renewal at churn risk — incumbent competitor ~8% below guided price.",ask:"7% uplift vs 10% guided",
         performance:"4 straight quarters at full guidance. 2026 renewal at churn risk, competitor bid ~8% below. Volume steady at 3.1k units/yr; strategic EMEA retail logo.",
         materials:["renewal_terms_nike.pdf","tmcgp_bridge_fy26.xlsx","competitive_summary.pptx"],submittedBy:"Jessica",submittedAt:"09-05 11:04",decision:null,decisionNote:"",calc:null,draftSaved:true}}),
-    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",track:"Exception",active:true,guidance:"Partial",unread:{sale:true,pm:true},
+    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88904",effective:"2026-02-15",unread:{sale:true,pm:true},
       exception:{stage:"Approved",reason:"Plant-wide refresh, 5-year relationship; one-time concession.",ask:"6% uplift vs 10% guided",
         performance:"Strategic industrial account, 5-year relationship. One-time 6% concession vs 10% guidance for a 2.6k-unit refresh.",
         materials:["plant_refresh_bosch.pdf","tmcgp_bridge_fy26.xlsx"],submittedBy:"Victor",submittedAt:"09-04 09:30",
         decision:"Approved",decisionNote:"One-time 6% concession approved for the refresh tranche only. Revisit at FY27 renewal.",calc:{totPct:13.6,bwPct:-0.4},draftSaved:true}}),
-    acc({id:"adidas",name:"Adidas",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"Exception",active:true,guidance:"None",unread:{sale:true,pm:false},
+    acc({id:"adidas",name:"Adidas",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"Exception",active:true,guidance:"None",uplift:"No Uplift",caNo:"CA-89203",effective:"2026-03-01",unread:{sale:true,pm:false},
       exception:{stage:"Rejected",reason:"Full waiver of the Aug guidance uplift citing budget freeze.",ask:"0% uplift vs 10% guided",
         performance:"Requested full waiver citing budget freeze. No competitive pressure documented.",
         materials:["budget_note_adidas.pdf"],submittedBy:"Victor",submittedAt:"09-04 15:10",
@@ -407,7 +413,7 @@ function freshState(){
     accounts:A, bids, rptRecords, saleBook:"Sam Ortiz",
     sel:{lbpBid:null, trkPM:null, trkDir:null, saleAcct:null, recSearch:""},
     lbpTool:null,
-    reportFilter:{geo:"All",vertical:"All"},
+    reportFilter:{geo:"All",vertical:"All",excClass:"All"},
     calc:{rows:[{u:120,rev:163680,t:8.5}],out:null,acctId:null},
     overlay:null,
     log:[{t:stamp(),html:"Prototype loaded.",acc:false}]
@@ -430,6 +436,24 @@ const pct=(n,d)=>d?Math.round(n/d*100)+"%":"0%";
 const A=id=>S.accounts.find(a=>a.id===id);
 const bidAcct=b=>A(b.accountId);
 const B=id=>S.bids.find(b=>b.id===id);
+
+function today(){ try{ return new Date().toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); }catch(e){ return "today"; } }
+const excClassOf=a=>{
+  if(!a||a.active===false) return null;
+  if(a.uplift==="Partial Uplift") return "Partial Exception";
+  if(a.uplift==="No Uplift") return "Full Exception";
+  if(a.track==="Exception") return "Full Exception";
+  return null;
+};
+const effType=b=>{ const a=bidAcct(b); return (a&&a.track==="Exception")||b.type==="Exception"?"Exception":"RPG"; };
+function acctFin(a){
+  const b=S.bids.find(x=>x.accountId===a.id);
+  const lines=(b&&b.lines&&b.lines.length)?b.lines:mkLines([0,2]);
+  const rev=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0),0);
+  const gp=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0)*((l.marginPct||10)/100),0);
+  const gap=a.uplift==="Partial Uplift"?0.045:a.uplift==="No Uplift"?0.09:0;
+  return {rev, gp, impact:rev*gap};
+}
 
 const hasManual=l=>l.manualPrice!=null&&String(l.manualPrice).trim()!=="";
 function linePrice(l){ if(hasManual(l))return +l.manualPrice; return l.flag?null:l.newPrice; }
@@ -546,7 +570,7 @@ function lbpWorkList(){
   if(r==="sale") return lbpSaleList();
   const q={pricer:["with-pricer"],pm:["with-pm"],director:["with-director"]}[r];
   const active=S.bids.filter(b=>q.includes(b.lbpStatus));
-  const mine=S.bids.filter(b=> r==="pricer"?b.type==="RPG":b.type==="Exception");
+  const mine=S.bids.filter(b=> r==="pricer"?effType(b)==="RPG":effType(b)==="Exception");
   return LBP_LEDE+`
   <div class="card" style="box-shadow:none"><h3>My Work List <span class="plat">${active.length} to action</span></h3>
     <div class="pad">
@@ -554,16 +578,16 @@ function lbpWorkList(){
       <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">All ${r==="pricer"?"Repricing":"Exception"} bids</div>
       <table class="sheet"><thead><tr><th>Bid</th><th>Account</th><th>Type</th><th>Status</th><th>Decision</th></tr></thead>
         <tbody>${mine.map(b=>`<tr class="click" data-act="lbp-open" data-id="${b.id}">
-          <td class="mono">${b.id}</td><td><b>${bidAcct(b).name}</b></td><td>${typeLabel(b.type)}</td>
+          <td class="mono">${b.id}</td><td><b>${bidAcct(b).name}</b></td><td>${typeLabel(effType(b))}</td>
           <td>${statusPill(b.lbpStatus)}</td><td>${decisionPill(b.decision)}</td></tr>`).join("")}</tbody></table>
     </div>
   </div>`;
 }
 function wlRow(b){
-  const a=bidAcct(b);
-  return `<div class="wlrow ${b.type==="Exception"?"exc":"rpg"}" data-act="lbp-open" data-id="${b.id}">
+  const a=bidAcct(b), et=effType(b);
+  return `<div class="wlrow ${et==="Exception"?"exc":"rpg"}" data-act="lbp-open" data-id="${b.id}">
     <span class="stripe"></span>
-    <span><span class="m1">${a.name} <span class="pill ${b.type==="Exception"?"yellow":"info"}">${typeLabel(b.type)}</span> ${statusPill(b.lbpStatus)}</span>
+    <span><span class="m1">${a.name} <span class="pill ${et==="Exception"?"yellow":"info"}">${typeLabel(et)}</span> ${statusPill(b.lbpStatus)}</span>
       <span class="m2">${b.id} · ${a.geo}/${a.vertical} · ${esc(b.description)}</span></span>
     <span class="chev">›</span></div>`;
 }
@@ -620,23 +644,27 @@ function lbpBidDetail(b){
       <td class="num">${mg==null?"—":mg.toFixed(1)+"%"}</td></tr>`; }).join("");
   const bm=bidMargin(b);
 
+  const et=effType(b);
   let actions="";
   if(r==="sale"){
     if(b.lbpStatus==="sale-confirm") actions=`<button class="btn primary" data-act="sale-confirm-open" data-id="${b.id}">Confirm &amp; Sync to Tracker</button>`;
     else actions=`<span class="tiny">Read-only — this is a Pricer / PM / Director bid. Feedback below.</span>`;
-  } else if(r==="pricer" && b.type==="RPG"){
+  } else if(r==="pricer" && et==="RPG"){
     const open=["with-pricer"].includes(b.lbpStatus);
     actions=`<button class="btn ok" data-act="lbp-act" data-id="${b.id}" data-kind="approve" ${open?"":"disabled"}>Approve</button>
       <button class="btn danger" data-act="lbp-act" data-id="${b.id}" data-kind="reject" ${open?"":"disabled"}>Reject</button>
-      <button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign</button>`;
-  } else if(r==="pm" && b.type==="Exception"){
+      <button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign</button>
+      <span class="tiny">The note screen opens after you click Approve or Reject.</span>`;
+  } else if(r==="pm" && et==="Exception"){
     const open=b.lbpStatus==="with-pm";
     actions=`<button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign to Director</button>
       <span class="tiny">The exception case (past performance, materials, send/save) is filled on the <b>Tracker</b> → Profit Mgr.</span>`;
-  } else if(r==="director" && b.type==="Exception"){
+  } else if(r==="director" && et==="Exception"){
     const open=b.lbpStatus==="with-director";
-    actions=`<button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign to PM</button>
-      <span class="tiny">Approve / reject the exception on the <b>Tracker</b> → Director / CFO.</span>`;
+    actions=`<button class="btn ok" data-act="dir-decide" data-id="${a.id}" data-kind="approve" ${open?"":"disabled"}>Approve exception</button>
+      <button class="btn danger" data-act="dir-decide" data-id="${a.id}" data-kind="reject" ${open?"":"disabled"}>Reject exception</button>
+      <button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign to PM</button>
+      <span class="tiny">The note screen opens after you click. Same decision as the Tracker.</span>`;
   } else actions=`<span class="tiny">No action for this role on this bid.</span>`;
 
   return `
@@ -792,37 +820,57 @@ function lbpRecords(){
 function vwTrkSale(){
   const book=S.saleBook;
   const list=S.accounts.filter(a=>a.mgr===book);
-  const stageLabel=a=>{ if(a.track!=="Exception")return "—"; const st=a.exception?.stage;
-    return st==="PM-intake"?"PM compiling":st==="Director-review"?"At Director/CFO":st==="Approved"?"Approved":st==="Rejected"?"Rejected":"—"; };
+  const statusOf=a=>{
+    if(a.track==="Exception"){ const e=a.exception||{};
+      return e.decision? e.decision : e.stage==="PM-intake"?"With Profit Mgr" : e.stage==="Director-review"?"With Director/CFO" : "In exception"; }
+    if(a.track==="RPG") return "Repricing — done";
+    return "Not submitted"; };
   const selA=S.sel.saleAcct&&A(S.sel.saleAcct);
   const relBid=selA&&S.bids.find(b=>b.accountId===selA.id);
   return `
-  <p class="lede"><b>Layer 2 — Tracker (PowerApps, separate app).</b> The <b>Sync to Tracker</b> window in LBP writes here. Every account in a manager's book: lane, who updated it, when, exception progress — plus the feedback comments from Pricer / Director.</p>
+  <p class="lede"><b>Layer 2 — Tracker · Sale.</b> Sale only sees what they filled in on LBP, who last owned the account (Sale + PM), and the account's current status.</p>
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
-    <div class="stat"><div class="v">${list.filter(a=>a.track==="RPG").length}</div><div class="l">On Repricing</div></div>
     <div class="stat"><div class="v">${list.filter(a=>a.track==="Exception").length}</div><div class="l">In exception</div></div>
     <div class="stat"><div class="v">${list.filter(a=>a.unread.sale).length}</div><div class="l">Unread results</div></div>
   </div>
-  <div class="card"><h3>Sale dashboard — account book <span class="plat">Main Table</span></h3>
+  <div class="card"><h3>My accounts <span class="plat">Main Table</span></h3>
     <div class="pad">
       <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
         <div class="field" style="max-width:220px"><label>Sale Manager</label>
           <select data-input="saleBook">${SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("")}</select></div>
         <button class="btn ghost sm" data-act="add-open" data-who="sale">+ Add new</button>
       </div>
-      <table class="sheet"><thead><tr><th>Account</th><th>Lane</th><th>Guidance</th><th>Last updated by</th><th>When</th><th>Exception progress</th></tr></thead>
+      <div style="overflow-x:auto"><table class="sheet">
+        <thead><tr><th>Account</th><th>Active</th><th>Uplift</th><th>Valid date</th><th>LNL</th><th>CA No.</th><th>Prev Sale</th><th>PM</th><th>Status</th></tr></thead>
         <tbody>${list.map(a=>`<tr class="click" data-act="trk-sale-open" data-id="${a.id}">
           <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread</span>`:""}</td>
-          <td>${a.track==="RPG"?`<span class="pill info">Repricing</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill mut">—</span>`}</td>
-          <td class="mono">${a.guidance||"—"}</td><td class="mono">${a.lastBy||"—"}</td><td class="mono">${a.lastAt||"—"}</td>
-          <td>${stageLabel(a)}</td></tr>`).join("")}</tbody></table>
+          <td>${a.track?(a.active?"Yes":"No"):"—"}</td>
+          <td class="mono">${a.uplift||"—"}</td>
+          <td class="mono">${a.effective||"—"}</td>
+          <td>${a.lnl==null?"—":a.lnl?"Yes":"No"}</td>
+          <td class="mono">${a.caNo||"—"}</td>
+          <td class="mono">${a.lastBy||"—"}</td>
+          <td class="mono">${PM_OF[a.mgr]}</td>
+          <td>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill ${a.track==="Exception"?"yellow":a.track==="RPG"?"info":"mut"}">${statusOf(a)}</span>`}</td></tr>`).join("")}</tbody></table></div>
     </div></div>
-  ${selA? `<div class="card" style="margin-top:16px"><h3>${selA.name} — detail</h3><div class="pad stack">
+  ${selA? `<div class="card" style="margin-top:16px"><h3>${selA.name} — what you filled in LBP</h3><div class="pad stack">
+      <div class="grid3">
+        <div class="field"><label>Active</label><div class="ro">${selA.track?(selA.active?"Yes":"No"):"—"}</div></div>
+        <div class="field"><label>Uplift agreed</label><div class="ro">${selA.uplift||"—"}</div></div>
+        <div class="field"><label>Exception class</label><div class="ro">${excClassOf(selA)||"— (Repricing)"}</div></div>
+        <div class="field"><label>Valid date</label><div class="ro">${selA.effective||"—"}</div></div>
+        <div class="field"><label>LNL</label><div class="ro">${selA.lnl==null?"—":selA.lnl?"Yes":"No"}</div></div>
+        <div class="field"><label>CA No.</label><div class="ro">${selA.caNo||"—"}</div></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>Previous Sale on account</label><div class="ro">${selA.lastBy||"—"}</div></div>
+        <div class="field"><label>Profit Manager</label><div class="ro">${PM_OF[selA.mgr]}</div></div>
+        <div class="field"><label>Account status</label><div class="ro">${statusOf(selA)}</div></div>
+      </div>
       ${selA.exception&&selA.exception.decision? `<div class="callout ${selA.exception.decision==="Approved"?"good":"bad"}"><b>Exception ${selA.exception.decision}.</b> ${esc(selA.exception.decisionNote)}</div>`:""}
-      ${relBid&&relBid.comments.length? `<div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Feedback on ${relBid.id}</div>
-        <div class="commentthread">${relBid.comments.map(c=>`<div class="cmt ${c.kind}"><div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")}</div></div>`
-        : `<div class="tiny">No feedback comments yet.</div>`}
+      ${relBid&&relBid.comments.length? `<div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Feedback from Pricer / Director on ${relBid.id}</div>
+        <div class="commentthread">${relBid.comments.map(c=>`<div class="cmt ${c.kind}"><div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")}</div></div>`:""}
     </div></div>`:""}`;
 }
 
@@ -842,6 +890,23 @@ function brow(a,c,role){
     <span><span class="nm">${a.name}${unread?`<span class="unread"></span>`:""}</span>
       <span class="meta">${a.geo} · ${a.vertical} · ${a.track==="Exception"?(a.exception?.stage||""):typeLabel(a.track)}</span></span>
     <span>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):a.track==="Exception"?`<span class="pill yellow">exc</span>`:`<span class="pill info">RPG</span>`}</span></div>`;
+}
+function saleInfoBlock(a){
+  const sel=(v,opts)=>opts.map(o=>`<option ${o===v?"selected":""}>${o}</option>`).join("");
+  const f=(label,inner)=>`<div class="field"><label>${label}</label>${inner}</div>`;
+  const cls=excClassOf(a);
+  return `<div class="card" style="box-shadow:none"><h3>Sale-filled tracker info <span class="plat">PM / Director may edit</span></h3><div class="pad">
+    <div class="grid3">
+      ${f("Active account?", `<select data-input="edActive" data-id="${a.id}">${sel(a.active?"Yes":"No",["Yes","No"])}</select>`)}
+      ${f("Uplift agreed", `<select data-input="edUplift" data-id="${a.id}">${sel(a.uplift||"Full Uplift",UPLIFTS)}</select>`)}
+      ${f("Exception class", `<div class="ro">${cls||"— (Repricing)"}</div>`)}
+    </div>
+    <div class="grid3" style="margin-top:10px">
+      ${f("Q10 Valid date", `<input type="date" data-input="edEff" data-id="${a.id}" value="${a.effective||""}">`)}
+      ${f("LNL in place?", `<select data-input="edLnl" data-id="${a.id}">${sel(a.lnl?"Yes":"No",["No","Yes"])}</select>`)}
+      ${f("CA No.", `<input data-input="edCa" data-id="${a.id}" value="${esc(a.caNo||"")}">`)}
+    </div>
+  </div></div>`;
 }
 function vwTrkPM(){
   const board=sortedBoard("pm");
@@ -864,6 +929,7 @@ function trkPMDetail(a){
     <div class="dbody">
       ${a.unread.pm&&e?.decision? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>Director/CFO ${e.decision}.</b> ${esc(e.decisionNote)}
         <div style="margin-top:8px"><button class="btn ghost sm" data-act="trk-mark-read" data-id="${a.id}">Mark read</button></div></div>`:""}
+      ${saleInfoBlock(a)}
       ${!e? `<div class="callout">Repricing account — not in the exception flow. <button class="btn ghost sm" data-act="pm-flag" data-id="${a.id}">Flag as Exception</button></div>` : `
       <div class="grid3">
         <div class="field"><label>Stage</label><div class="ro">${e.stage}</div></div>
@@ -920,11 +986,12 @@ function trkDirDetail(a){
   return `<div class="bdetail">
     <div class="dhead"><h3>${a.name}</h3><div class="sub">${a.geo} · ${a.vertical} · submitted by ${e?.submittedBy||"—"} ${e?.submittedAt||""}</div></div>
     <div class="dbody">
+      ${saleInfoBlock(a)}
       ${!e? `<div class="callout">Repricing account — not in the exception flow.</div>` : `
       <div class="grid3">
         <div class="field"><label>Stage</label><div class="ro">${e.stage}</div></div>
         <div class="field"><label>Requested</label><div class="ro">${esc(e.ask||"—")}</div></div>
-        <div class="field"><label>Active</label><div class="ro">${a.active?"Yes":"No"}</div></div>
+        <div class="field"><label>Class</label><div class="ro">${excClassOf(a)||"—"}</div></div>
       </div>
       <div class="field"><label>Sale's reason</label><div class="callout">${esc(e.reason||"—")}</div></div>
       <div class="field"><label>PM — account past performance</label><div class="callout">${esc(e.performance||"(not compiled)")}</div></div>
@@ -950,20 +1017,37 @@ function trkDirDetail(a){
 function vwReport(kind){
   const F=S.reportFilter, all=S.accounts, R=computeReport(all);
   const geos=["All",...new Set(all.map(a=>a.geo))], verts=["All",...new Set(all.map(a=>a.vertical))];
-  const match=a=>(F.geo==="All"||a.geo===F.geo)&&(F.vertical==="All"||a.vertical===F.vertical);
-  const exc=R.exceptions.filter(match), miss=R.missing.filter(match);
+  const gvMatch=a=>(F.geo==="All"||a.geo===F.geo)&&(F.vertical==="All"||a.vertical===F.vertical);
+  const clsMatch=a=>F.excClass==="All"||excClassOf(a)===F.excClass;
+  const exc=R.exceptions.filter(a=>gvMatch(a)&&clsMatch(a));
+  const miss=R.missing.filter(gvMatch);
   const uplTable=`<table class="sheet"><thead><tr><th>Bucket</th><th class="num">Accounts</th><th class="num">% of active</th></tr></thead>
     <tbody>${upRow("Full uplift",R.b.full,R.active)}${upRow("Partial uplift",R.b.partial,R.active)}${upRow("No uplift",R.b.none,R.active)}${upRow("Missing input",R.b.missing,R.active)}</tbody>
     <tfoot><tr class="total"><td>Active total</td><td class="num">${R.active}</td><td class="num">100%</td></tr></tfoot></table>`;
   const chart=kind==="GA"?decompTree(R):verticalBreakdown();
+
+  // exception sizing by class (respecting geo/vertical filter, ignoring the class filter)
+  const excGV=R.exceptions.filter(gvMatch);
+  const sizeOf=cls=>{ const g=excGV.filter(a=>excClassOf(a)===cls);
+    const rev=g.reduce((s,a)=>s+acctFin(a).rev,0), gp=g.reduce((s,a)=>s+acctFin(a).gp,0), imp=g.reduce((s,a)=>s+acctFin(a).impact,0);
+    return {n:g.length,rev,gp,imp}; };
+  const sPartial=sizeOf("Partial Exception"), sFull=sizeOf("Full Exception");
+  const sizeCard=(label,s,color)=>`<div class="stat" style="border-left:4px solid ${color}">
+    <div class="v">${s.n}</div><div class="l">${label}</div>
+    <div class="s">Rev ${m2(s.rev)} · GP ${m2(s.gp)} · GP Impact ${m2(s.imp)}</div></div>`;
+
   return `
-  <p class="lede"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the whole book by status.":"The <b>GTP</b> page breaks the same book down by vertical."} The exception &amp; missing-input tables have their own Geo / Vertical filter.</p>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+    <p class="lede" style="margin:0"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the book by status.":"The <b>GTP</b> page breaks it down by vertical."} <b>Partial Uplift → Partial Exception</b>, <b>No Uplift → Full Exception</b> — filterable below for sizing.</p>
+    <span class="tiny mono">As of ${today()}</span>
+  </div>
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${R.total}</div><div class="l">GA accounts</div></div>
     <div class="stat"><div class="v">${R.active}</div><div class="l">Active</div><div class="s">${pct(R.active,R.total)}</div></div>
     <div class="stat"><div class="v">${R.notActive}</div><div class="l">Not active</div></div>
     <div class="stat"><div class="v">${R.b.missing}</div><div class="l">Missing input</div><div class="s">${pct(R.b.missing,R.active)} of active</div></div>
-    <div class="stat"><div class="v">${R.exceptions.length}</div><div class="l">Exceptions</div></div>
+    ${sizeCard("Partial Exception",sPartial,"var(--warn)")}
+    ${sizeCard("Full Exception",sFull,"var(--bad)")}
   </div>
   <div class="card" style="margin-bottom:16px"><h3>${kind==="GA"?"GA account decomposition":"GTP — accounts by vertical"} <span class="plat">Power BI</span></h3>
     <div class="pad cols2" style="align-items:start"><div style="overflow-x:auto">${chart}</div><div>${uplTable}</div></div></div>
@@ -972,17 +1056,23 @@ function vwReport(kind){
       <div class="filterbar">
         <div class="field"><label>Geo</label><select data-input="fGeo">${geos.map(g=>`<option ${g===F.geo?"selected":""}>${g}</option>`).join("")}</select></div>
         <div class="field"><label>Vertical</label><select data-input="fVert">${verts.map(v=>`<option ${v===F.vertical?"selected":""}>${v}</option>`).join("")}</select></div>
-        ${(F.geo!=="All"||F.vertical!=="All")?`<button class="btn ghost sm" data-act="rep-clear">Clear</button>`:""}
+        <div class="field"><label>Exception class</label><select data-input="fExcClass">${["All","Partial Exception","Full Exception"].map(c=>`<option ${c===F.excClass?"selected":""}>${c}</option>`).join("")}</select></div>
+        ${(F.geo!=="All"||F.vertical!=="All"||F.excClass!=="All")?`<button class="btn ghost sm" data-act="rep-clear">Clear</button>`:""}
       </div>
-      <div class="cols2">
-        <div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Exception accounts · ${exc.length}</div>
-          <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>Stage</th><th>Decision</th></tr></thead>
-            <tbody>${exc.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td>${a.exception?.stage||"—"}</td>
-              <td>${a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill yellow">pending</span>`}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table></div>
-        <div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
-          <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
-            <tbody>${miss.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td>${a.mgr}</td><td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table></div>
-      </div>
+      <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Exception accounts · ${exc.length}</div>
+      <div style="overflow-x:auto"><table class="sheet">
+        <thead><tr><th>HQ Geo</th><th>Account</th><th>ISR</th><th>GAM</th><th>Class</th><th>Q10 Valid Date</th><th>CA No.</th><th class="num">Exc REV $(M)</th><th class="num">GP $(M)</th><th class="num">GP Impact $(M)</th><th>Stage / Decision</th></tr></thead>
+        <tbody>${exc.map(a=>{ const f=acctFin(a); const cls=excClassOf(a);
+          return `<tr><td>${a.geo}</td><td><b>${a.name}</b></td><td class="mono">${a.sp.split("@")[0]}</td><td>${a.gam}</td>
+          <td><span class="pill ${cls==="Partial Exception"?"warn":"bad"}">${cls||"—"}</span></td>
+          <td class="mono">${a.effective||"—"}</td><td class="mono">${a.caNo||"—"}</td>
+          <td class="num">${(f.rev/1e6).toFixed(2)}</td><td class="num">${(f.gp/1e6).toFixed(2)}</td><td class="num">${(f.impact/1e6).toFixed(2)}</td>
+          <td>${a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill yellow">${a.exception?.stage||"pending"}</span>`}</td></tr>`; }).join("")
+          || `<tr><td colspan="11" class="tiny">none match the filter</td></tr>`}</tbody></table></div>
+
+      <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
+      <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>ISR</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
+        <tbody>${miss.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td class="mono">${a.sp.split("@")[0]}</td><td>${a.mgr}</td><td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="5" class="tiny">none</td></tr>`}</tbody></table>
     </div></div>`;
 }
 function upRow(label,n,base){
@@ -1054,15 +1144,16 @@ function syncRpgModal(bidId){
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>Sync to Tracker — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout info">Pricing confirmed with the customer. This small LBP plug-in writes the Repricing record to the Tracker. If the plug-in can't be built, the same form opens in the Tracker app directly.</div>
+      <div class="callout info">Pricing confirmed with the customer. This small LBP plug-in writes the Tracker record. <b>Partial Uplift</b> = Partial Exception and <b>No Uplift</b> = Full Exception — either sends the account to the Profit Manager.</div>
       <div class="grid2">
         <div class="field"><label>Q1 · Active account?</label><select data-input="q_active"><option>Yes</option><option>No</option></select></div>
-        <div class="field"><label>Q2 · Followed full guidance?</label><select data-input="q_guidance"><option>Full</option><option>Partial</option><option>None</option></select></div>
+        <div class="field"><label>Q2 · Uplift agreed with customer</label><select data-input="q_uplift">${UPLIFTS.map(u=>`<option>${u}</option>`).join("")}</select></div>
       </div>
       <div class="grid2">
-        <div class="field"><label>Q3 · Effective date</label><input type="date" data-input="q_eff" value="2026-02-01"></div>
-        <div class="field"><label>Q4 · LNL in place?</label><select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
+        <div class="field"><label>Q10 · Valid date</label><input type="date" data-input="q_eff" value="2026-02-01"></div>
+        <div class="field"><label>LNL in place?</label><select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
       </div>
+      <div class="field"><label>CA No.</label><input data-input="q_ca" placeholder="e.g. CA-89310" value="${esc(S._qCa||"")}"></div>
       <button class="btn primary" data-act="sync-rpg-submit" data-id="${bidId}">Submit to Tracker</button>
     </div></div></div>`;
 }
@@ -1071,8 +1162,12 @@ function syncExcModal(bidId){
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>Sync to Tracker — Exception</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout warn">Bid Type is <b>Exception</b>. This window syncs the account to the Tracker as an exception right away — the Profit Manager picks it up from their LBP work list and writes the case on the Tracker.</div>
+      <div class="callout warn">Bid Type is <b>Exception</b>. This window syncs the account to the Tracker right away — the Profit Manager picks it up from their LBP work list and writes the case on the Tracker.</div>
       <div class="field"><label>Account</label><div class="ro">${a.name} · ${a.geo} · ${a.vertical}</div></div>
+      <div class="grid2">
+        <div class="field"><label>Uplift the customer will take</label><select data-input="excUplift"><option>Partial Uplift</option><option>No Uplift</option></select></div>
+        <div class="field"><label>CA No.</label><input data-input="q_ca" placeholder="e.g. CA-89310" value="${esc(S._qCa||"")}"></div>
+      </div>
       <div class="field"><label>Reason for exception</label><textarea data-input="excReason" placeholder="customer situation, competitive pressure…">${esc(S._excReason||"")}</textarea></div>
       <div class="field"><label>Requested vs guided price</label><input data-input="excAsk" placeholder="e.g. 6% uplift vs 10% guided" value="${esc(S._excAsk||"")}"></div>
       <button class="btn primary" data-act="sync-exc-submit" data-id="${bidId}">Sync exception to Tracker</button>
@@ -1150,9 +1245,17 @@ function inputChange(key,val,node,silent){
     case "excReason": S._excReason=val; break;
     case "excAsk": S._excAsk=val; break;
     case "q_active": S._qActive=val; break;
-    case "q_guidance": S._qGuid=val; break;
+    case "q_uplift": S._qUplift=val; break;
     case "q_eff": S._qEff=val; break;
     case "q_lnl": S._qLnl=val; break;
+    case "q_ca": S._qCa=val; break;
+    case "excUplift": S._excUplift=val; break;
+    case "fExcClass": S.reportFilter.excClass=val; render(); break;
+    case "edActive": { const a=A(node.dataset.id); if(a){ a.active=val==="Yes"; a.exception&&(a.exception.class=excClassOf(a)); } if(!silent) render(); break; }
+    case "edUplift": { const a=A(node.dataset.id); if(a){ a.uplift=val; a.guidance=GUID_OF[val]||a.guidance; if(val!=="Full Uplift" && a.track!=="Exception"){ a.track="Exception"; a.exception=a.exception||{stage:"PM-intake",reason:"(re-classified by "+(S.role.tracker||"user")+")",ask:"",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}; } } if(!silent) render(); break; }
+    case "edEff": { const a=A(node.dataset.id); if(a) a.effective=val; break; }
+    case "edLnl": { const a=A(node.dataset.id); if(a) a.lnl=val==="Yes"; break; }
+    case "edCa": { const a=A(node.dataset.id); if(a) a.caNo=val; break; }
     case "actNote": S._actNote=val; break;
     case "reassignTo": S._reassignTo=val; break;
     case "freeCmt": S._freeCmt=val; break;
@@ -1202,21 +1305,35 @@ const ACT={
   "sync-exc-submit"(d){
     const b=B(d.id), a=bidAcct(b);
     a.exception.reason=S._excReason||""; a.exception.ask=S._excAsk||"";
-    a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
-    S._excReason=""; S._excAsk=""; S.overlay=null;
-    log(`Sync to Tracker — <b>${a.name}</b> written as an exception. PM ${PM_OF[a.mgr]} picks it up in LBP.`, true);
-    toast(`${a.name} synced to Tracker (Exception).`);
+    a.uplift=S._excUplift||"No Uplift"; a.guidance=GUID_OF[a.uplift];
+    a.caNo=S._qCa||a.caNo; a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
+    a.exception.class=excClassOf(a);
+    S._excReason=""; S._excAsk=""; S._qCa=""; S._excUplift=""; S.overlay=null;
+    log(`Sync to Tracker — <b>${a.name}</b> as a <b>${a.exception.class}</b>. PM ${PM_OF[a.mgr]} picks it up in LBP.`, true);
+    toast(`${a.name} synced to Tracker (${a.exception.class}).`);
     render();
   },
   "sale-confirm-open"(d){ S.overlay="sync-rpg:"+d.id; renderOverlay(); bind(); },
   "sync-rpg-submit"(d){
     const b=B(d.id), a=bidAcct(b);
-    a.track="RPG"; a.active=(S._qActive||"Yes")==="Yes"; a.guidance=S._qGuid||"Full";
-    a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
+    a.active=(S._qActive||"Yes")==="Yes";
+    a.uplift=S._qUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
+    a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes"; a.caNo=S._qCa||a.caNo;
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
-    b.lbpStatus="closed"; S.overlay=null; S.sel.lbpBid=null;
-    log(`Sync to Tracker — <b>${a.name}</b> Repricing confirmed: ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}.`, true);
-    toast(`${a.name} synced to Tracker (Repricing).`);
+    S._qCa=""; S.overlay=null; S.sel.lbpBid=null;
+    if(a.uplift==="Full Uplift"){
+      a.track="RPG"; b.lbpStatus="closed";
+      log(`Sync to Tracker — <b>${a.name}</b> confirmed: <b>Full Uplift</b> · valid ${a.effective} · LNL ${a.lnl?"yes":"no"}.`, true);
+      toast(`${a.name} synced — Full Uplift (Repricing).`);
+    } else {
+      a.track="Exception";
+      const cls=excClassOf(a);
+      a.exception={stage:"PM-intake", reason:`Customer agreed to ${a.uplift} only.`, ask:a.uplift==="Partial Uplift"?"Partial uplift vs 10% guided":"0% uplift vs 10% guided",
+        performance:"", materials:[], submittedBy:null, submittedAt:null, decision:null, decisionNote:"", calc:null, draftSaved:false, class:cls};
+      b.lbpStatus="with-pm";
+      log(`Sync to Tracker — <b>${a.name}</b> confirmed <b>${a.uplift}</b> → <b>${cls}</b>. Routed to PM ${PM_OF[a.mgr]}.`, true);
+      toast(`${a.name} → ${cls} (to Profit Manager).`);
+    }
     render();
   },
 
@@ -1354,7 +1471,7 @@ ACT["add-submit"]=function(d){
   render();
 };
 ACT["trk-sale-open"]=function(d){ const a=A(d.id); if(a.unread.sale){ a.unread.sale=false; log(`Sale read the result on <b>${a.name}</b>.`); } S.sel.saleAcct=d.id; render(); };
-ACT["rep-clear"]=function(){ S.reportFilter={geo:"All",vertical:"All"}; render(); };
+ACT["rep-clear"]=function(){ S.reportFilter={geo:"All",vertical:"All",excClass:"All"}; render(); };
 
 render();
 </script>
