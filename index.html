@@ -439,7 +439,7 @@ const B=id=>S.bids.find(b=>b.id===id);
 
 function today(){ try{ return new Date().toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}); }catch(e){ return "today"; } }
 const excClassOf=a=>{
-  if(!a||a.active===false) return null;
+  if(!a) return null;
   if(a.uplift==="Partial Uplift") return "Partial Exception";
   if(a.uplift==="No Uplift") return "Full Exception";
   if(a.track==="Exception") return "Full Exception";
@@ -838,14 +838,13 @@ function vwTrkSale(){
         <button class="btn ghost sm" data-act="add-open" data-who="sale">+ Add new</button>
       </div>
       <div style="overflow-x:auto"><table class="sheet">
-        <thead><tr><th>Account</th><th>Active</th><th>Uplift</th><th>Valid date</th><th>LNL</th><th>CA No.</th><th>Prev Sale</th><th>PM</th><th>Status</th></tr></thead>
+        <thead><tr><th>Account</th><th>Active</th><th>Uplift</th><th>Valid date</th><th>LNL</th><th>Prev Sale</th><th>PM</th><th>Status</th></tr></thead>
         <tbody>${list.map(a=>`<tr class="click" data-act="trk-sale-open" data-id="${a.id}">
           <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread</span>`:""}</td>
           <td>${a.track?(a.active?"Yes":"No"):"—"}</td>
           <td class="mono">${a.uplift||"—"}</td>
           <td class="mono">${a.effective||"—"}</td>
           <td>${a.lnl==null?"—":a.lnl?"Yes":"No"}</td>
-          <td class="mono">${a.caNo||"—"}</td>
           <td class="mono">${a.lastBy||"—"}</td>
           <td class="mono">${PM_OF[a.mgr]}</td>
           <td>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill ${a.track==="Exception"?"yellow":a.track==="RPG"?"info":"mut"}">${statusOf(a)}</span>`}</td></tr>`).join("")}</tbody></table></div>
@@ -857,7 +856,6 @@ function vwTrkSale(){
         <div class="field"><label>Exception class</label><div class="ro">${excClassOf(selA)||"— (Repricing)"}</div></div>
         <div class="field"><label>Valid date</label><div class="ro">${selA.effective||"—"}</div></div>
         <div class="field"><label>LNL</label><div class="ro">${selA.lnl==null?"—":selA.lnl?"Yes":"No"}</div></div>
-        <div class="field"><label>CA No.</label><div class="ro">${selA.caNo||"—"}</div></div>
       </div>
       <div class="grid3">
         <div class="field"><label>Previous Sale on account</label><div class="ro">${selA.lastBy||"—"}</div></div>
@@ -1149,7 +1147,6 @@ function syncRpgModal(bidId){
         <div class="field"><label>Q10 · Valid date</label><input type="date" data-input="q_eff" value="2026-02-01"></div>
         <div class="field"><label>LNL in place?</label><select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
       </div>
-      <div class="field"><label>CA No.</label><input data-input="q_ca" placeholder="e.g. CA-89310" value="${esc(S._qCa||"")}"></div>
       <button class="btn primary" data-act="sync-rpg-submit" data-id="${bidId}">Submit to Tracker</button>
     </div></div></div>`;
 }
@@ -1161,8 +1158,12 @@ function syncExcModal(bidId){
       <div class="callout warn">Bid Type is <b>Exception</b>. This window syncs the account to the Tracker right away — the Profit Manager picks it up from their LBP work list and writes the case on the Tracker.</div>
       <div class="field"><label>Account</label><div class="ro">${a.name} · ${a.geo} · ${a.vertical}</div></div>
       <div class="grid2">
+        <div class="field"><label>Active account?</label><select data-input="q_active"><option>Yes</option><option>No</option></select></div>
         <div class="field"><label>Uplift the customer will take</label><select data-input="excUplift"><option>Partial Uplift</option><option>No Uplift</option></select></div>
-        <div class="field"><label>CA No.</label><input data-input="q_ca" placeholder="e.g. CA-89310" value="${esc(S._qCa||"")}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Q10 · Valid date</label><input type="date" data-input="q_eff" value="2026-02-01"></div>
+        <div class="field"><label>LNL in place?</label><select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
       </div>
       <div class="field"><label>Reason for exception</label><textarea data-input="excReason" placeholder="customer situation, competitive pressure…">${esc(S._excReason||"")}</textarea></div>
       <div class="field"><label>Requested vs guided price</label><input data-input="excAsk" placeholder="e.g. 6% uplift vs 10% guided" value="${esc(S._excAsk||"")}"></div>
@@ -1191,18 +1192,26 @@ function recModal(recId){
       <button class="btn ghost" data-act="rec-copy" data-id="${r.id}">⧉ Copy note</button></div></div></div>`;
 }
 function addModal(who){
-  const book=S.saleBook;
   const opts=S.accounts.map(a=>`<option value="${a.id}">${a.name} · ${a.geo} · ${a.vertical}${a.track?" — already in "+typeLabel(a.track==="RPG"?"RPG":"Exception"):""}</option>`).join("");
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>Add new — manual entry</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout info">For a bid that didn't sync from LBP. The account must be one that already exists on the Main Table.</div>
+      <div class="callout info">For a bid that didn't sync from LBP. The account must already exist on the Main Table. Fill the same tracker form Sale fills in LBP.</div>
       <div class="field"><label>Account (from Main Table)</label><select data-input="addAcct">${opts}</select></div>
       <div class="grid2">
         <div class="field"><label>Bid Type</label><select data-input="addType"><option>Repricing</option><option>Exception</option></select></div>
         <div class="field"><label>Bid Request Type</label><select data-input="addReq"><option>Renewal</option><option>New Business</option></select></div>
       </div>
+      <div class="grid2">
+        <div class="field"><label>Active account?</label><select data-input="addActive"><option>Yes</option><option>No</option></select></div>
+        <div class="field"><label>Uplift agreed</label><select data-input="addUplift">${UPLIFTS.map(u=>`<option>${u}</option>`).join("")}</select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Q10 · Valid date</label><input type="date" data-input="addEff" value="2026-02-01"></div>
+        <div class="field"><label>LNL in place?</label><select data-input="addLnl"><option>No</option><option>Yes</option></select></div>
+      </div>
       <div class="field"><label>Description</label><textarea data-input="addDesc" placeholder="what this bid is">${esc(S._addDesc||"")}</textarea></div>
+      <div class="tiny">Partial / No Uplift (or Bid Type = Exception) creates a Partial / Full Exception and puts it on the Profit Manager's board.</div>
       <button class="btn primary" data-act="add-submit" data-who="${who}">Add to Tracker</button>
     </div></div></div>`;
 }
@@ -1262,6 +1271,10 @@ function inputChange(key,val,node,silent){
     case "addType": S._addType=val; break;
     case "addReq": S._addReq=val; break;
     case "addDesc": S._addDesc=val; break;
+    case "addActive": S._addActive=val; break;
+    case "addUplift": S._addUplift=val; break;
+    case "addEff": S._addEff=val; break;
+    case "addLnl": S._addLnl=val; break;
     case "fGeo": S.reportFilter.geo=val; render(); break;
     case "fVert": S.reportFilter.vertical=val; render(); break;
   }
@@ -1301,10 +1314,12 @@ const ACT={
   "sync-exc-submit"(d){
     const b=B(d.id), a=bidAcct(b);
     a.exception.reason=S._excReason||""; a.exception.ask=S._excAsk||"";
+    a.active=(S._qActive||"Yes")==="Yes";
     a.uplift=S._excUplift||"No Uplift"; a.guidance=GUID_OF[a.uplift];
-    a.caNo=S._qCa||a.caNo; a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
+    a.effective=S._qEff||a.effective; a.lnl=(S._qLnl||"No")==="Yes";
+    a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
     a.exception.class=excClassOf(a);
-    S._excReason=""; S._excAsk=""; S._qCa=""; S._excUplift=""; S.overlay=null;
+    S._excReason=""; S._excAsk=""; S._excUplift=""; S.overlay=null;
     log(`Sync to Tracker — <b>${a.name}</b> as a <b>${a.exception.class}</b>. PM ${PM_OF[a.mgr]} picks it up in LBP.`, true);
     toast(`${a.name} synced to Tracker (${a.exception.class}).`);
     render();
@@ -1314,9 +1329,9 @@ const ACT={
     const b=B(d.id), a=bidAcct(b);
     a.active=(S._qActive||"Yes")==="Yes";
     a.uplift=S._qUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
-    a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes"; a.caNo=S._qCa||a.caNo;
+    a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
-    S._qCa=""; S.overlay=null; S.sel.lbpBid=null;
+    S.overlay=null; S.sel.lbpBid=null;
     if(a.uplift==="Full Uplift"){
       a.track="RPG"; b.lbpStatus="closed";
       log(`Sync to Tracker — <b>${a.name}</b> confirmed: <b>Full Uplift</b> · valid ${a.effective} · LNL ${a.lnl?"yes":"no"}.`, true);
@@ -1438,22 +1453,33 @@ ACT["dir-confirm"]=function(d){
 };
 
 /* Tracker · add new */
-ACT["add-open"]=function(d){ S._addAcct=S.accounts[0].id; S._addType="Repricing"; S._addReq="Renewal"; S._addDesc="";
-  S.overlay="add:"+d.who; renderOverlay(); bind(); };
+ACT["add-open"]=function(d){
+  S._addAcct=S.accounts[0].id; S._addType="Repricing"; S._addReq="Renewal"; S._addDesc="";
+  S._addActive="Yes"; S._addUplift="Full Uplift"; S._addEff="2026-02-01"; S._addLnl="No";
+  S.overlay="add:"+d.who; renderOverlay(); bind();
+};
 ACT["add-submit"]=function(d){
   const a=A(S._addAcct)||S.accounts[0];
-  const isExc=(S._addType||"Repricing")==="Exception";
+  const who=d.who;
+  a.active=(S._addActive||"Yes")==="Yes";
+  a.uplift=S._addUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
+  a.effective=S._addEff||a.effective; a.lnl=(S._addLnl||"No")==="Yes";
+  a.lastBy=(who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0]); a.lastAt=todayStamp();
+  const isExc=(S._addType||"Repricing")==="Exception" || a.uplift!=="Full Uplift";
   const b=mkBid({id:nextBid(),accountId:a.id,type:isExc?"Exception":"RPG",description:(S._addDesc||"manual entry"),
-    bidReqType:S._addReq||"Renewal",submittedBy:d.who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0],manual:true,
-    lbpStatus:isExc?"with-pm":"with-pricer"});
+    bidReqType:S._addReq||"Renewal",submittedBy:a.sp.split("@")[0],manual:true,
+    lbpStatus:isExc?"with-pm":"closed"});
+  if(!isExc) b.decision="Approved", b.decisionBy=PRICER;
   S.bids.unshift(b);
-  if(isExc && !a.exception){
+  if(isExc){
     a.track="Exception";
-    a.exception={stage:"PM-intake",reason:(S._addDesc||"manual entry"),ask:"",performance:"",materials:[],submittedBy:d.who==="pm"?PM_OF[a.mgr]:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false};
+    a.exception=a.exception||{stage:"PM-intake",reason:(S._addDesc||`Customer agreed to ${a.uplift} only.`),ask:"",performance:"",materials:[],submittedBy:who==="pm"?PM_OF[a.mgr]:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false};
+    a.exception.class=excClassOf(a);
+  } else {
+    a.track="RPG";
   }
-  a.lastBy=(d.who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0]); a.lastAt=todayStamp();
   S.overlay=null;
-  log(`Manual entry added on the Tracker — <b>${a.name}</b> · ${typeLabel(b.type)} (${b.id}).`, true);
+  log(`Manual entry added on the Tracker — <b>${a.name}</b> · ${isExc?excClassOf(a):"Repricing"} · ${a.uplift} (${b.id}).`, true);
   toast(`${a.name} added manually.`);
   render();
 };
