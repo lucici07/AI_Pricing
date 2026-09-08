@@ -704,16 +704,12 @@ function lbpBidDetail(b){
       <div class="pad stack">
         <div class="toolrow">${actions}</div>
         <div>
-          <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Comment thread ${r!=="sale"&&(b.lbpStatus==="closed"||b.lbpStatus==="sale-confirm")?"":""}</div>
+          <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Comment thread</div>
           <div class="commentthread">
             ${b.comments.length? b.comments.map(c=>`<div class="cmt ${c.kind}">
               <div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")
-              : `<div class="tiny">No comments yet.</div>`}
+              : `<div class="tiny">No comments yet — a comment is added when someone approves, rejects, or reassigns the bid.</div>`}
           </div>
-          ${r!=="sale" && b.lbpStatus!=="closed" ? `
-            <div class="field" style="margin-top:10px"><label>Add a comment (no state change)</label>
-              <textarea data-input="freeCmt" data-id="${b.id}" placeholder="note for the record / for Sale…">${esc(S._freeCmt||"")}</textarea></div>
-            <button class="btn ghost sm" data-act="lbp-comment" data-id="${b.id}">Post comment</button>`:""}
         </div>
       </div>
     </div>
@@ -1383,15 +1379,6 @@ const ACT={
       toast(`${a.name} reassigned to ${to}.`);
     }
     S.overlay=null; S._actNote=""; render();
-  },
-  "lbp-comment"(d){
-    const b=B(d.id), a=bidAcct(b), role=S.role.lbp;
-    const by=role==="pricer"?PRICER:role==="pm"?PM_OF[a.mgr]:DIRECTOR;
-    if(!(S._freeCmt||"").trim()){ toast("Write something first."); return; }
-    addComment(b,"note",role,by,S._freeCmt.trim());
-    if(role!=="sale") a.unread.sale=true;
-    log(`${by} commented on ${b.id} (${a.name}).`, true);
-    S._freeCmt=""; toast("Comment posted."); render();
   },
 
   /* RPT records */
