@@ -22,24 +22,25 @@
 
 ## 用 GitHub Pages 托管
 
-代码已经推到 `main` 分支。**注意：这个仓库目前是 private，GitHub 免费账号的 Pages 只支持 public 仓库。**
+代码和**自动部署流水线**（`.github/workflows/deploy.yml`）都已经在 `main` 分支上。
+每次 `git push`，GitHub Actions 会自动把网站发布到 Pages，不需要再手动操作。
 
-### 方案 A — 把仓库改成 public（免费，最简单）
+只剩下一次性开关，这个只能仓库 owner 在网页上点（GitHub 不允许别人代操作）：
 
-1. **Settings → General →** 最下方 **Danger Zone → Change repository visibility → Public**
-   （站点内容全是虚构演示数据，可以公开）
-2. **Settings → Pages → Build and deployment**
-   - **Source**：`Deploy from a branch`
-   - **Branch**：`main` ，文件夹 `/ (root)` → **Save**
-3. 等 1–2 分钟，站点上线：**https://lucici07.github.io/AI_Pricing/**
+1. **仓库是 private 的话先改 public** —— `Settings → General → Danger Zone → Change repository visibility → Public`
+   （免费账号的 Pages 只支持 public 仓库；本站内容全是虚构演示数据，可以公开。有 GitHub Pro 则可跳过这步。）
+2. **Settings → Pages → Build and deployment → Source** 选 **`GitHub Actions`**
+3. 回到 **Actions** 标签，等那条 “Deploy to GitHub Pages” 跑完（约 1 分钟）
 
-以后改完 `index.html` 再 `git push`，Pages 会自动重新部署。
+站点地址：**https://lucici07.github.io/AI_Pricing/**
 
-### 方案 B — 保持 private，用别的免费托管
+之后每次改完 `index.html`：
 
-- **Cloudflare Pages** / **Netlify** / **Vercel**：都能连 private 仓库，免费，自动部署。
-  最快的是 Netlify：把整个 `AI_Pricing` 文件夹拖到 <https://app.netlify.com/drop> 就能立刻拿到一个链接。
-- 或升级到 **GitHub Pro**，private 仓库就能用 Pages。
+```bash
+git add -A && git commit -m "update" && git push
+```
+
+推上去就自动重新部署。
 
 ## 文件说明
 
