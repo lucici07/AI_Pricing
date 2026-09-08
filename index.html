@@ -12,7 +12,7 @@
   [hidden]{display:none!important}
 </style>
 <title>GA Repricing Platform</title>
-<meta name="description" content="Clickable prototype: the RPT repricing tool embedded in LBP, a separate PowerApps Tracker, and Power BI reporting — over shared bid and account state.">
+<meta name="description" content="Clickable prototype: the RPT repricing tool embedded per-bid in LBP, a separate PowerApps Tracker, and Power BI reporting over shared bid and account state.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
@@ -58,7 +58,6 @@
     --yellow:#E3B84D; --yellow-bg:#332912;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.7);
   }
-
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{font-family:var(--fs-sans);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
@@ -104,15 +103,13 @@
   .appwin > .bar .plat{margin-left:auto;font-family:var(--fs-mono);font-weight:400;font-size:11px;opacity:.85;}
   .appwin > .body{padding:16px;background:var(--surface);}
 
-  /* LBP chrome */
   .lbpbar{display:flex;align-items:center;gap:12px;background:var(--brand);color:#fff;padding:9px 16px;border-radius:10px 10px 0 0;}
   .lbpbar .lg{font-family:var(--fs-display);font-weight:600;font-size:15px;letter-spacing:.3px;}
   .lbpbar .sr{margin-left:auto;background:rgba(255,255,255,.16);border-radius:6px;padding:4px 10px;font-size:11px;font-family:var(--fs-mono);}
-  .lbpwrap{border:1px solid var(--border-strong);border-top:0;border-radius:0 0 10px 10px;background:var(--surface);}
+  .lbpwrap{border:1px solid var(--border-strong);border-top:0;border-radius:0 0 10px 10px;background:var(--surface);padding:16px;}
 
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   .field label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;}
   .field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:7px;background:var(--surface);color:var(--ink);font-size:13px;}
   .field textarea{resize:vertical;min-height:66px;line-height:1.45;}
@@ -128,7 +125,6 @@
   .btn.danger{background:var(--surface);color:var(--bad);border:1px solid var(--bad);}
   .btn.sm{padding:6px 11px;font-size:12px;}
   .btn:disabled{opacity:.42;cursor:not-allowed;}
-  .btn .lock{font-size:12px;}
 
   .callout{border-radius:9px;padding:11px 13px;font-size:12.5px;line-height:1.5;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);}
   .callout.info{background:var(--info-bg);border-color:color-mix(in srgb,var(--info) 30%,transparent);color:var(--ink);}
@@ -162,9 +158,9 @@
   .stat .l{font-size:11px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.04em;}
   .stat .s{font-size:11px;color:var(--ink-2);margin-top:2px;font-family:var(--fs-mono);}
 
-  /* worklist */
   .wl{display:flex;flex-direction:column;gap:8px;}
-  .wlrow{display:grid;grid-template-columns:6px 1fr auto;gap:12px;align-items:center;border:1px solid var(--border-strong);border-radius:10px;padding:11px 13px 11px 0;background:var(--surface);}
+  .wlrow{display:grid;grid-template-columns:6px 1fr auto;gap:12px;align-items:center;border:1px solid var(--border-strong);border-radius:10px;padding:11px 13px 11px 0;background:var(--surface);cursor:pointer;}
+  .wlrow:hover{border-color:var(--info);}
   .wlrow .stripe{align-self:stretch;border-radius:10px 0 0 10px;background:var(--border-strong);}
   .wlrow.rpg .stripe{background:var(--info);}
   .wlrow.exc .stripe{background:var(--yellow);}
@@ -172,9 +168,18 @@
   .wlrow.rej .stripe{background:var(--bad);}
   .wlrow .m1{font-weight:600;font-size:13px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
   .wlrow .m2{font-size:11.5px;color:var(--muted);font-family:var(--fs-mono);margin-top:2px;}
-  .wlrow .acts{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+  .wlrow .chev{color:var(--muted);font-size:16px;padding-right:12px;}
 
-  /* board */
+  .toolrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .bidsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .commentthread{display:flex;flex-direction:column;gap:8px;}
+  .cmt{border:1px solid var(--border);border-radius:9px;padding:9px 11px;background:var(--surface-2);font-size:12.5px;}
+  .cmt .h{font-size:10.5px;color:var(--muted);font-family:var(--fs-mono);margin-bottom:3px;display:flex;gap:8px;align-items:center;}
+  .cmt.approve{border-left:3px solid var(--good);}
+  .cmt.reject{border-left:3px solid var(--bad);}
+  .cmt.reassign{border-left:3px solid var(--info);}
+  .cmt.note{border-left:3px solid var(--border-strong);}
+
   .board{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start;}
   .blist{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow-y:auto;padding-right:2px;}
   .brow{display:grid;grid-template-columns:6px 1fr auto;gap:10px;align-items:center;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px 10px 0;cursor:pointer;background:var(--surface);}
@@ -205,14 +210,10 @@
   .check{display:grid;grid-template-columns:22px 1fr;gap:11px;align-items:start;padding:10px 4px;border-bottom:1px solid var(--border);}
   .check:last-child{border-bottom:0;}
   .check .ico{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--muted);border:1.5px solid var(--border-strong);}
-  .check.run .ico{border-color:var(--info);color:var(--info);animation:spin 1s linear infinite;}
   .check.pass .ico{background:var(--good);border-color:var(--good);color:#fff;}
   .check .lab{font-weight:600;font-size:13px;}
   .check .det{font-size:11.5px;color:var(--muted);margin-top:2px;font-family:var(--fs-mono);line-height:1.4;}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @media (prefers-reduced-motion:reduce){.check.run .ico{animation:none;}}
   .lineflag{background:var(--warn-bg);}
-
   .notebox{white-space:pre-wrap;font-family:var(--fs-mono);font-size:11px;line-height:1.6;border:1px solid var(--border-strong);border-radius:8px;padding:11px;background:var(--surface-2);color:var(--ink);max-height:230px;overflow:auto;}
 
   .kpi-rows{width:100%;border-collapse:collapse;font-size:12px;}
@@ -226,7 +227,6 @@
   .kpi-table td{font-family:var(--fs-mono);font-variant-numeric:tabular-nums;}
   .kpi-table .metric{font-family:var(--fs-sans);font-weight:600;}
 
-  /* tree / treemap */
   .tree{display:flex;align-items:stretch;overflow-x:auto;padding:6px 0;}
   .tcol{display:flex;flex-direction:column;justify-content:center;gap:10px;min-width:170px;}
   .tcol.links{min-width:30px;}
@@ -277,14 +277,8 @@
   @media (prefers-reduced-motion:reduce){.toast{animation:none;}}
 
   .foot{max-width:1440px;margin:0 auto;padding:6px 22px 40px;color:var(--muted);font-size:11px;}
-
-  @media (max-width:1080px){
-    .board{grid-template-columns:1fr;}
-    .blist{max-height:none;flex-direction:row;overflow-x:auto;}
-    .brow{min-width:230px;}
-    .cols2{grid-template-columns:1fr;}
-  }
-  @media (max-width:720px){ .grid2,.grid3,.grid4{grid-template-columns:1fr;} }
+  @media (max-width:1080px){ .board{grid-template-columns:1fr;} .blist{max-height:none;flex-direction:row;overflow-x:auto;} .brow{min-width:230px;} .cols2{grid-template-columns:1fr;} }
+  @media (max-width:720px){ .grid2,.grid3{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -321,7 +315,6 @@ const SALE_MGRS=["Sam Ortiz","Dana Weiss","Wei Tan"];
 const PM_OF={"Sam Ortiz":"Jessica","Dana Weiss":"Victor","Wei Tan":"Priya"};
 const PRICER="Alex Park";
 const DIRECTOR="R. Mehta";
-
 const CATALOG=[
   {pn:"21HD003TAU", family:"ThinkPad T14 Gen 5", memory:"DDR5-5600 16GB", ssd:"G4P 512GB", cpu:"Core Ultra 7 155U", flag:false, marginPct:11.4, base:1180, qty:60},
   {pn:"21MW0012US", family:"ThinkPad P16 Gen 3", memory:"DDR5-6400 32GB", ssd:"G4P 1TB", cpu:"Core Ultra 9 + RTX 3000 Ada", flag:true, marginPct:null, base:2640, qty:14},
@@ -330,118 +323,94 @@ const CATALOG=[
 ];
 const REFBIDS=["GA-FY25-8842","GA-FY25-8801","GA-FY25-9017","GA-FY25-8763"];
 const BASELINE=[
-  {geo:"NA",   vertical:"Tech",       rev:12.40e6, tmcgp:1.79e6},
-  {geo:"NA",   vertical:"Retail",     rev:4.80e6,  tmcgp:0.61e6},
-  {geo:"EMEA", vertical:"Retail",     rev:6.10e6,  tmcgp:0.79e6},
-  {geo:"EMEA", vertical:"Sport",      rev:2.20e6,  tmcgp:0.24e6},
-  {geo:"EMEA", vertical:"Industrial", rev:3.40e6,  tmcgp:0.45e6},
-  {geo:"AP",   vertical:"Tech",       rev:8.40e6,  tmcgp:1.27e6},
-  {geo:"AP",   vertical:"Retail",     rev:3.00e6,  tmcgp:0.36e6}
+  {geo:"NA",vertical:"Tech",rev:12.40e6,tmcgp:1.79e6},
+  {geo:"NA",vertical:"Retail",rev:4.80e6,tmcgp:0.61e6},
+  {geo:"EMEA",vertical:"Retail",rev:6.10e6,tmcgp:0.79e6},
+  {geo:"EMEA",vertical:"Sport",rev:2.20e6,tmcgp:0.24e6},
+  {geo:"EMEA",vertical:"Industrial",rev:3.40e6,tmcgp:0.45e6},
+  {geo:"AP",vertical:"Tech",rev:8.40e6,tmcgp:1.27e6},
+  {geo:"AP",vertical:"Retail",rev:3.00e6,tmcgp:0.36e6}
 ];
 const MT_TARGET=14.0;
-
 let bidSeq=5018, rptSeq=3302, clock=9*3600+14*60+3;
 const nextBid=()=>"B-"+(++bidSeq);
 const nextRpt=()=>"RPT-"+(++rptSeq);
+const typeLabel=t=>t==="RPG"?"Repricing":"Exception";
 
 function acc(o){ return Object.assign({
   active:true, track:null, guidance:null, effective:null, lnl:null,
   lastBy:null, lastAt:null, exception:null, unread:{sale:false,pm:false}
 }, o); }
-
-function mkLines(idx){
-  return idx.map(i=>{ const c=CATALOG[i];
-    return {pn:c.pn, family:c.family, memory:c.memory, ssd:c.ssd, cpu:c.cpu, flag:c.flag,
-      refBid:REFBIDS[i%REFBIDS.length], base:c.base, uplift:10,
-      newPrice:+(c.base*1.1).toFixed(2), qty:c.qty, marginPct:c.marginPct, manualPrice:null};
-  });
-}
-function mkBid(o){ return Object.assign({
+function mkLines(idx){ return idx.map(i=>{ const c=CATALOG[i];
+  return {pn:c.pn,family:c.family,memory:c.memory,ssd:c.ssd,cpu:c.cpu,flag:c.flag,
+    refBid:REFBIDS[i%REFBIDS.length],base:c.base,uplift:10,newPrice:+(c.base*1.1).toFixed(2),qty:c.qty,marginPct:c.marginPct,manualPrice:null}; }); }
+function mkBid(o){ return {
   id:o.id, accountId:o.accountId, type:o.type, description:o.description||"",
-  submittedBy:o.submittedBy, submittedAt:todayStamp(),
+  bidReqType:o.bidReqType||"Renewal", fulfillment:o.fulfillment||"Direct",
+  submittedBy:o.submittedBy, submittedAt:o.submittedAt||todayStamp(), manual:!!o.manual,
   lbpStatus:o.lbpStatus||"with-pricer",
-  decision:null, decisionBy:null, decisionNote:"",
+  decision:o.decision||null, decisionBy:o.decisionBy||null,
+  comments:o.comments||[],
   lines:mkLines(o.lineIdx||[0,1,2]),
-  priced:!!o.priced, calcRunning:false, autoNote:o.autoNote||"", pricerNote:"",
-  lpsSynced:false, rejecting:false, rejectReason:""
-}, {}); }
+  rptRan:!!o.rptRan, pricerNote:"", lpsSynced:false
+}; }
 
 function freshState(){
   const A=[
-    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",
-      track:"RPG",active:true,guidance:"Full",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
-    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",
-      track:"RPG",active:true,guidance:"Partial",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12"}),
-    acc({id:"puma",name:"Puma",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",
-      track:"RPG",active:true,guidance:null,lastBy:"t.koch",lastAt:"09-01 16:40"}),
-    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",
-      track:"RPG",active:true,guidance:"Full",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"09-02 08:55"}),
-    acc({id:"rakuten",name:"Rakuten",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Retail",gam:"Arjun",
-      track:"RPG",active:false,guidance:"None",lastBy:"w.tan",lastAt:"08-28 13:00"}),
+    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"RPG",active:true,guidance:"Full",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
+    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",track:"RPG",active:true,guidance:"Partial",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12"}),
+    acc({id:"puma",name:"Puma",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"RPG",active:true,guidance:null,lastBy:"t.koch",lastAt:"09-01 16:40"}),
+    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",track:"RPG",active:true,guidance:"Full",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"09-02 08:55"}),
+    acc({id:"rakuten",name:"Rakuten",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Retail",gam:"Arjun",track:"RPG",active:false,guidance:"None",lastBy:"w.tan",lastAt:"08-28 13:00"}),
     acc({id:"databricks",name:"Databricks",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"snowflake",name:"Snowflake",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"zara",name:"Zara",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena"}),
-    acc({id:"stripe",name:"Stripe",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",
-      track:"Exception",active:true,
-      exception:{stage:"PM-intake",reason:"Customer budget freeze for FY26 H1; asked to hold the Aug uplift.",ask:"0% uplift vs 10% guided",
-        performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null}}),
-    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",
-      track:"Exception",active:true,
-      exception:{stage:"PM-intake",reason:"Event-year volume spike; requests tiered pricing on the incremental units.",ask:"6% uplift vs 10% guided on incremental",
-        performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null}}),
-    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",
-      track:"Exception",active:true,
+    acc({id:"stripe",name:"Stripe",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"Exception",active:true,
+      exception:{stage:"PM-intake",reason:"Customer budget freeze for FY26 H1; asked to hold the Aug uplift.",ask:"0% uplift vs 10% guided",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
+    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",track:"Exception",active:true,
+      exception:{stage:"PM-intake",reason:"Event-year volume spike; requests tiered pricing on incremental units.",ask:"6% uplift vs 10% guided on incremental",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
+    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",track:"Exception",active:true,
       exception:{stage:"Director-review",reason:"Renewal at churn risk — incumbent competitor ~8% below guided price.",ask:"7% uplift vs 10% guided",
-        performance:"4 straight quarters at full guidance. 2026 renewal at churn risk, competitor bid ~8% below. Volume steady at 3.1k units/yr; strategic logo in EMEA retail.",
-        materials:["renewal_terms_nike.pdf","tmcgp_bridge_fy26.xlsx","competitive_summary.pptx"],
-        submittedBy:"Jessica",submittedAt:"09-05 11:04",decision:null,decisionNote:"",calc:null}}),
-    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",
-      track:"Exception",active:true,guidance:"Partial",unread:{sale:true,pm:true},
+        performance:"4 straight quarters at full guidance. 2026 renewal at churn risk, competitor bid ~8% below. Volume steady at 3.1k units/yr; strategic EMEA retail logo.",
+        materials:["renewal_terms_nike.pdf","tmcgp_bridge_fy26.xlsx","competitive_summary.pptx"],submittedBy:"Jessica",submittedAt:"09-05 11:04",decision:null,decisionNote:"",calc:null,draftSaved:true}}),
+    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",track:"Exception",active:true,guidance:"Partial",unread:{sale:true,pm:true},
       exception:{stage:"Approved",reason:"Plant-wide refresh, 5-year relationship; one-time concession.",ask:"6% uplift vs 10% guided",
         performance:"Strategic industrial account, 5-year relationship. One-time 6% concession vs 10% guidance for a 2.6k-unit refresh.",
         materials:["plant_refresh_bosch.pdf","tmcgp_bridge_fy26.xlsx"],submittedBy:"Victor",submittedAt:"09-04 09:30",
-        decision:"Approved",decisionNote:"One-time 6% concession approved for the refresh tranche only. Revisit at FY27 renewal.",calc:{totPct:13.6,bwPct:-0.4}}}),
-    acc({id:"adidas",name:"Adidas",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",
-      track:"Exception",active:true,guidance:"None",unread:{sale:true,pm:false},
+        decision:"Approved",decisionNote:"One-time 6% concession approved for the refresh tranche only. Revisit at FY27 renewal.",calc:{totPct:13.6,bwPct:-0.4},draftSaved:true}}),
+    acc({id:"adidas",name:"Adidas",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"Exception",active:true,guidance:"None",unread:{sale:true,pm:false},
       exception:{stage:"Rejected",reason:"Full waiver of the Aug guidance uplift citing budget freeze.",ask:"0% uplift vs 10% guided",
         performance:"Requested full waiver citing budget freeze. No competitive pressure documented.",
         materials:["budget_note_adidas.pdf"],submittedBy:"Victor",submittedAt:"09-04 15:10",
-        decision:"Rejected",decisionNote:"Impact exceeds the MT threshold and no competitive justification. Renegotiate volume commitment instead.",calc:{totPct:12.9,bwPct:-1.1}}})
+        decision:"Rejected",decisionNote:"Impact exceeds the MT threshold and no competitive justification. Renegotiate volume commitment instead.",calc:{totPct:12.9,bwPct:-1.1},draftSaved:true}})
   ];
-
   const bids=[
-    mkBid({id:"B-5012",accountId:"snowflake",type:"RPG",description:"RPG — Q1 renewal, 120u, full per guidance",submittedBy:"s.chan",lbpStatus:"with-pricer",lineIdx:[0,1,2]}),
-    mkBid({id:"B-5013",accountId:"zara",type:"RPG",description:"RPG renewal — EMEA retail refresh",submittedBy:"t.koch",lbpStatus:"with-pricer",lineIdx:[0,3]}),
-    mkBid({id:"B-5020",accountId:"databricks",type:"RPG",description:"RPG — new 3yr contract, full guidance",submittedBy:"s.chan",lbpStatus:"sale-confirm",lineIdx:[0,2],priced:true}),
-    mkBid({id:"B-5014",accountId:"stripe",type:"Exception",description:"Exception — budget freeze, hold uplift",submittedBy:"s.chan",lbpStatus:"with-pm",lineIdx:[0,1]}),
-    mkBid({id:"B-5015",accountId:"fifa",type:"Exception",description:"Exception — event-year tiered pricing",submittedBy:"l.gomez",lbpStatus:"with-pm",lineIdx:[0,3]}),
-    mkBid({id:"B-5016",accountId:"nike",type:"Exception",description:"Exception — renewal churn risk, competitor 8% below",submittedBy:"a.raj",lbpStatus:"with-director",lineIdx:[0,2]}),
-    mkBid({id:"B-5017",accountId:"bosch",type:"Exception",description:"Exception — plant refresh one-time concession",submittedBy:"t.koch",lbpStatus:"closed",lineIdx:[0,3]}),
-    mkBid({id:"B-5018",accountId:"adidas",type:"Exception",description:"Exception — full uplift waiver",submittedBy:"t.koch",lbpStatus:"closed",lineIdx:[3]})
+    mkBid({id:"B-5012",accountId:"snowflake",type:"RPG",description:"Q1 renewal, 120u, full per guidance",submittedBy:"s.chan",lbpStatus:"with-pricer",lineIdx:[0,1,2]}),
+    mkBid({id:"B-5013",accountId:"zara",type:"RPG",description:"EMEA retail refresh",submittedBy:"t.koch",lbpStatus:"with-pricer",lineIdx:[0,3]}),
+    mkBid({id:"B-5020",accountId:"databricks",type:"RPG",description:"New 3yr contract, full guidance",submittedBy:"s.chan",lbpStatus:"sale-confirm",lineIdx:[0,2],rptRan:true,decision:"Approved",decisionBy:PRICER,
+      comments:[{role:"pricer",by:PRICER,kind:"approve",text:"Blended margin 11.7%, all lines within the 5–15% band. Ref bid GA-FY25-8842. Good to sign.",ts:"09-06 10:40"}]}),
+    mkBid({id:"B-5014",accountId:"stripe",type:"Exception",description:"Budget freeze — hold uplift",submittedBy:"s.chan",lbpStatus:"with-pm",lineIdx:[0,1]}),
+    mkBid({id:"B-5015",accountId:"fifa",type:"Exception",description:"Event-year tiered pricing",submittedBy:"l.gomez",lbpStatus:"with-pm",lineIdx:[0,3]}),
+    mkBid({id:"B-5016",accountId:"nike",type:"Exception",description:"Renewal churn risk, competitor 8% below",submittedBy:"a.raj",lbpStatus:"with-director",lineIdx:[0,2],rptRan:true,
+      comments:[{role:"pm",by:"Jessica",kind:"reassign",text:"Internal price reworked to a 7% uplift on the renewal tranche. Case + KPI in the Tracker. Reassigning to Director. → director",ts:"09-05 11:10"}]}),
+    mkBid({id:"B-5017",accountId:"bosch",type:"Exception",description:"Plant refresh one-time concession",submittedBy:"t.koch",lbpStatus:"closed",lineIdx:[0,3],decision:"Approved",decisionBy:DIRECTOR}),
+    mkBid({id:"B-5018",accountId:"adidas",type:"Exception",description:"Full uplift waiver",submittedBy:"t.koch",lbpStatus:"closed",lineIdx:[3],decision:"Rejected",decisionBy:DIRECTOR})
   ];
-  bids.find(b=>b.id==="B-5020").decision="Approved";
-  bids.find(b=>b.id==="B-5020").decisionBy=PRICER;
-  bids.find(b=>b.id==="B-5017").decision="Approved"; bids.find(b=>b.id==="B-5017").decisionBy=DIRECTOR;
-  bids.find(b=>b.id==="B-5018").decision="Rejected"; bids.find(b=>b.id==="B-5018").decisionBy=DIRECTOR;
-
   const rptRecords=[
-    {id:"RPT-3301",bidId:"B-5020",account:"Databricks",kind:"pricing",role:"pricer",savedBy:PRICER,ts:"09-06 10:22",
+    {id:"RPT-3301",bidId:"B-5020",account:"Databricks",role:"pricer",savedBy:PRICER,ts:"09-06 10:22",
      note:"Repricing · Databricks · B-5020 · NA/Tech · GTP FY26 Aug (+10%)\n21HD003TAU | prev $1,180.00 | DDR5-5600 16GB | G4P 512GB (Core Ultra 7 155U) = $1,298.00\n21KC004GGE | prev $1,560.00 | DDR5-6400 16GB | G4P 512GB (Core Ultra 7 165U) = $1,716.00\nBlended margin 11.7%"},
-    {id:"RPT-3302",bidId:"B-5016",account:"Nike",kind:"exception-case",role:"pm",savedBy:"Jessica",ts:"09-05 11:00",
-     note:"Exception case · Nike · EMEA/Retail\nRequested: 7% uplift vs 10% guided\nPerformance: 4 straight quarters at full guidance; renewal churn risk, competitor ~8% below; 3.1k units/yr.\nMaterials: renewal_terms_nike.pdf, tmcgp_bridge_fy26.xlsx, competitive_summary.pptx"}
+    {id:"RPT-3302",bidId:"B-5016",account:"Nike",role:"pm",savedBy:"Jessica",ts:"09-05 11:05",
+     note:"Repricing · Nike · B-5016 · EMEA/Retail · GTP FY26 Aug (+10%)\n21HD003TAU | prev $1,180.00 | DDR5-5600 16GB | G4P 512GB (Core Ultra 7 155U) = $1,263.00\n21KC004GGE | prev $1,560.00 | DDR5-6400 16GB | G4P 512GB (Core Ultra 7 165U) = $1,669.00\nBlended margin 8.4% (7% uplift on renewal tranche)"}
   ];
-
   return {
-    tab:"lbp",
-    role:{lbp:"sale", tracker:"sale", reporting:"ga"},
-    accounts:A, bids, rptRecords,
-    saleBook:"Sam Ortiz",
+    tab:"lbp", role:{lbp:"sale", tracker:"sale", reporting:"ga"},
+    accounts:A, bids, rptRecords, saleBook:"Sam Ortiz",
     sel:{lbpBid:null, trkPM:null, trkDir:null, saleAcct:null, recSearch:""},
-    rpt:{open:null, role:null, ran:false},
-    reportFilter:{geo:"All", vertical:"All"},
-    calc:{rows:[{u:120,rev:163680,t:8.5}], out:null, acctId:null},
+    lbpTool:null,
+    reportFilter:{geo:"All",vertical:"All"},
+    calc:{rows:[{u:120,rev:163680,t:8.5}],out:null,acctId:null},
     overlay:null,
-    log:[{t:stamp(),html:"Prototype loaded — RPT lives inside LBP; Tracker &amp; reporting are separate.",acc:false}]
+    log:[{t:stamp(),html:"Prototype loaded.",acc:false}]
   };
 }
 let S=freshState();
@@ -469,10 +438,8 @@ function lineMargin(l){ const p=linePrice(l); if(p==null)return null;
   if(hasManual(l)){ const c=lineCost(l); return +(((p-c)/p)*100).toFixed(1); }
   return l.flag?null:l.marginPct; }
 function bidMargin(b){ let rev=0,gp=0,any=false;
-  b.lines.forEach(l=>{ const mg=lineMargin(l),p=linePrice(l); if(mg==null||p==null)return;
-    any=true; const r=p*l.qty; rev+=r; gp+=r*mg/100; });
+  b.lines.forEach(l=>{ const mg=lineMargin(l),p=linePrice(l); if(mg==null||p==null)return; any=true; const r=p*l.qty; rev+=r; gp+=r*mg/100; });
   return any?+(gp/rev*100).toFixed(1):null; }
-
 function pricingNote(b){
   const a=bidAcct(b);
   const rows=b.lines.map(l=>{ const p=linePrice(l);
@@ -481,31 +448,15 @@ function pricingNote(b){
   return `Repricing · ${a.name} · ${b.id} · ${a.geo}/${a.vertical} · GTP FY26 Aug (+10%)\n`+rows.join("\n")+
     `\nBlended margin ${bm==null?"—":bm.toFixed(1)+"%"}`+(b.pricerNote?`\n\nNotes: ${b.pricerNote}`:"");
 }
-function excCaseNote(a){
-  const e=a.exception;
-  return `Exception case · ${a.name} · ${a.geo}/${a.vertical}\nRequested: ${e.ask||"—"}\nReason: ${e.reason||"—"}\n`+
-    `Performance: ${e.performance||"(not yet compiled)"}\nMaterials: ${(e.materials||[]).join(", ")||"none"}`;
-}
-function kpiNote(a){
-  const e=a.exception, k=e.calc;
-  const base=BASELINE.find(x=>x.geo===a.geo&&x.vertical===a.vertical)||BASELINE.find(x=>x.geo===a.geo)||BASELINE[0];
-  return `Exception KPI impact · ${a.name} · ${a.geo}/${a.vertical}\nBaseline: REV ${m2(base.rev)} · TMCGP ${m2(base.tmcgp)} (${(base.tmcgp/base.rev*100).toFixed(2)}%)\n`+
-    (k?`With new deal: TMCGP% ${k.totPct.toFixed(2)}% · ${pp(k.bwPct)} vs MT ${MT_TARGET.toFixed(1)}%`:"KPI not yet calculated")+
-    `\nPM case: ${e.performance||"—"}`;
-}
-const canRPT=role=>["pricer","pm","director"].includes(role);
+function addComment(b,kind,role,by,text){ b.comments.push({role,by,kind,text,ts:todayStamp()}); }
 const rptRecord=(bidId,role)=>S.rptRecords.find(r=>r.bidId===bidId&&r.role===role);
 
 function computeReport(list){
-  const total=list.length;
   const active=list.filter(a=>a.active===true);
-  const notActive=list.filter(a=>a.active===false);
   const b={full:0,partial:0,none:0,missing:0};
-  active.forEach(a=>{ if(a.guidance==="Full")b.full++; else if(a.guidance==="Partial")b.partial++;
-    else if(a.guidance==="None")b.none++; else b.missing++; });
-  return {total,active:active.length,notActive:notActive.length,b,
-    exceptions:list.filter(a=>a.track==="Exception"),
-    missing:list.filter(a=>a.active===true&&!a.guidance)};
+  active.forEach(a=>{ if(a.guidance==="Full")b.full++; else if(a.guidance==="Partial")b.partial++; else if(a.guidance==="None")b.none++; else b.missing++; });
+  return {total:list.length,active:active.length,notActive:list.filter(a=>a.active===false).length,b,
+    exceptions:list.filter(a=>a.track==="Exception"), missing:list.filter(a=>a.active===true&&!a.guidance)};
 }
 function runCalc(accId){
   const a=A(accId);
@@ -514,14 +465,10 @@ function runCalc(accId){
   const newRev=rows.reduce((s,r)=>s+(+r.rev||0),0);
   const newTmcgp=rows.reduce((s,r)=>s+(+r.rev||0)*(+r.t||0)/100,0);
   const totRev=base.rev+newRev, totTmcgp=base.tmcgp+newTmcgp;
-  const basePct=base.tmcgp/base.rev*100;
-  const newPct=newRev?newTmcgp/newRev*100:0;
-  const totPct=totRev?totTmcgp/totRev*100:0;
+  const basePct=base.tmcgp/base.rev*100, newPct=newRev?newTmcgp/newRev*100:0, totPct=totRev?totTmcgp/totRev*100:0;
   const out={base,baseRev:base.rev,baseTmcgp:base.tmcgp,newRev,newTmcgp,totRev,totTmcgp,basePct,newPct,totPct,bwPct:totPct-MT_TARGET};
   S.calc.out=out; S.calc.acctId=accId; return out;
 }
-
-/* board colour */
 function boardColor(a,role){
   if(a.track==="RPG") return "blue";
   if(a.track==="Exception"&&a.exception){
@@ -535,32 +482,34 @@ function boardColor(a,role){
   return "grey";
 }
 const CO={yellow:0,red:1,green:2,blue:3,grey:4};
-const sortedBoard=role=>[...S.accounts].filter(a=>a.track)
-  .map(a=>({a,c:boardColor(a,role)}))
+const sortedBoard=role=>[...S.accounts].filter(a=>a.track).map(a=>({a,c:boardColor(a,role)}))
   .sort((x,y)=>(CO[x.c]-CO[y.c])||x.a.name.localeCompare(y.a.name));
 
 /* ============================================================ render */
 function render(){
   renderTabs(); renderRoles();
-  const key=S.tab+":"+S.role[S.tab];
   let html;
-  if(S.tab==="lbp"){ html = S.rpt.open ? rptScreen() : vwLBP(); }
-  else if(S.tab==="tracker"){ html = ({sale:vwTrkSale,pm:vwTrkPM,director:vwTrkDir}[S.role.tracker]||vwTrkSale)(); }
-  else { html = vwReport(S.role.reporting==="gtp"?"GTP":"GA"); }
+  if(S.tab==="lbp"){
+    if(S.role.lbp==="records") html=lbpRecords();
+    else if(S.sel.lbpBid && S.lbpTool==="rpt") html=lbpWrap(rptScreen(B(S.sel.lbpBid)));
+    else if(S.sel.lbpBid && S.lbpTool==="lps") html=lbpWrap(lpsScreen(B(S.sel.lbpBid)));
+    else if(S.sel.lbpBid) html=lbpWrap(lbpBidDetail(B(S.sel.lbpBid)));
+    else html=lbpWrap(lbpWorkList());
+  } else if(S.tab==="tracker"){
+    html=({sale:vwTrkSale,pm:vwTrkPM,director:vwTrkDir}[S.role.tracker]||vwTrkSale)();
+  } else html=vwReport(S.role.reporting==="gtp"?"GTP":"GA");
   $("#view").innerHTML=html;
-  $("#foot").textContent="Clickable prototype. RPT = a calc-only tool embedded in LBP (Pricer / PM / Director only). Decisions are LBP work-list actions. Tracker is a separate PowerApps app; reporting is Power BI. Names, PNs and figures are demo data.";
+  $("#foot").textContent="Clickable prototype. RPT + LPS are per-bid tools inside each LBP bid (Pricer / PM / Director). Repricing decisions are made in LBP; the exception decision is made on the Tracker by Director. Names, PNs and figures are demo data.";
   renderOverlay(); bind();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function renderTabs(){
-  const pricerQ=S.bids.filter(b=>b.lbpStatus==="with-pricer").length;
-  const pmQ=S.bids.filter(b=>b.lbpStatus==="with-pm").length;
-  const dirQ=S.bids.filter(b=>b.lbpStatus==="with-director").length;
-  const saleQ=S.bids.filter(b=>b.lbpStatus==="sale-confirm").length+S.accounts.filter(a=>a.unread.sale).length;
-  const n=pricerQ+pmQ+dirQ+saleQ;
+  const n=S.bids.filter(b=>["with-pricer","with-pm","with-director","sale-confirm"].includes(b.lbpStatus)).length
+    + S.accounts.filter(a=>a.unread.sale).length
+    + S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="Director-review").length;
   const badge=v=>v?`<span class="n">${v}</span>`:"";
-  const defs=[["lbp","LBP  ·  RPT",n],["tracker","Tracker",0],["reporting","Reporting",0]];
-  $("#tabs").innerHTML=defs.map(([id,l,v])=>`<button class="tab" role="tab" aria-selected="${S.tab===id}" data-tab="${id}">${l}${badge(v)}</button>`).join("");
+  $("#tabs").innerHTML=[["lbp","LBP  ·  RPT",n],["tracker","Tracker",0],["reporting","Reporting",0]].map(([id,l,v])=>
+    `<button class="tab" role="tab" aria-selected="${S.tab===id}" data-tab="${id}">${l}${badge(v)}</button>`).join("");
 }
 function renderRoles(){
   const cfg={
@@ -569,137 +518,256 @@ function renderRoles(){
     reporting:[["ga","GA"],["gtp","GTP · by vertical"]]
   }[S.tab];
   $("#roles").innerHTML=`<span class="lbl">${S.tab==="reporting"?"View":S.tab==="lbp"?"Signed in as":"Role"}</span>`+
-    `<div class="role-seg">`+cfg.map(([id,l])=>`<button data-role="${id}" aria-pressed="${S.role[S.tab]===id}">${l}</button>`).join("")+`</div>`+
-    (S.tab==="lbp"&&S.role.lbp!=="records"&&S.role.lbp!=="sale"?`<span class="tiny" style="margin-left:8px">🔓 RPT access granted</span>`:
-     S.tab==="lbp"&&S.role.lbp==="sale"?`<span class="tiny" style="margin-left:8px">🔒 RPT not available to Sale</span>`:"");
+    `<div class="role-seg">`+cfg.map(([id,l])=>`<button data-role="${id}" aria-pressed="${S.role[S.tab]===id}">${l}</button>`).join("")+`</div>`;
 }
 
 /* ============================================================ LBP */
 function statusPill(s){
-  const m={"with-pricer":"warn","with-pm":"warn","with-director":"warn","sale-confirm":"info","approved":"good","rejected":"bad","closed":"mut"};
+  const m={"with-pricer":"warn","with-pm":"warn","with-director":"warn","sale-confirm":"info","closed":"mut"};
   const l={"with-pricer":"with Pricer","with-pm":"with PM","with-director":"with Director","sale-confirm":"Sale to confirm","closed":"closed"}[s]||s;
   return `<span class="pill ${m[s]||"mut"}">${l}</span>`;
 }
-function decisionPill(d){ return d==="Approved"?`<span class="pill good">Approved</span>`:d==="Rejected"?`<span class="pill bad">Rejected</span>`:""; }
+const decisionPill=d=>d==="Approved"?`<span class="pill good">Approved</span>`:d==="Rejected"?`<span class="pill bad">Rejected</span>`:"";
+const canRPT=role=>["pricer","pm","director"].includes(role);
 
-function vwLBP(){
+function lbpWrap(inner){
   const r=S.role.lbp;
-  if(r==="records") return lbpRecords();
-  const inner={sale:lbpSale,pricer:lbpPricer,pm:lbpPM,director:lbpDirector}[r]();
   return `
-  <p class="lede"><b>Layer 1 — LBP (Lenovo Bid Platform).</b> Sale submits bids here and writes <span class="mono">RPG</span> or <span class="mono">Exception</span> in the Description. Pricer / PM / Director pick up their bids from the work list and open <b>RPT</b> — a calc-only tool embedded in LBP (LPS is already embedded). Approve / reject happen in the work list; RPT never decides.</p>
   <div class="appwin">
     <div class="lbpbar"><span class="lg">LENOVO BID PLATFORM</span>
-      <span class="sr">${r==="sale"?"Sales Rep":r==="pricer"?"Pricer · "+PRICER:r==="pm"?"Profit Mgr":"Director / CFO · "+DIRECTOR}</span></div>
-    <div class="lbpwrap"><div style="padding:16px">${inner}</div></div>
+      <span class="sr">${r==="sale"?"Sales Rep":r==="pricer"?"Pricer · "+PRICER:r==="pm"?"Profit Mgr":r==="director"?"Director / CFO · "+DIRECTOR:"—"}</span></div>
+    <div class="lbpwrap">${inner}</div>
   </div>`;
 }
+const LBP_LEDE=`<p class="lede"><b>Layer 1 — LBP (Lenovo Bid Platform).</b> Sale submits bids here; <b>Bid Type</b> is <span class="mono">Repricing</span> or <span class="mono">Exception</span>. Pricer / PM / Director open a bid — <b>RPT</b> (repricing calc) and <b>LPS</b> are tools inside each bid. Repricing is approved / rejected here with a comment Sale can read; the exception decision is made on the Tracker.</p>`;
 
-function lbpSale(){
+function lbpWorkList(){
+  const r=S.role.lbp;
+  if(r==="sale") return lbpSaleList();
+  const q={pricer:["with-pricer"],pm:["with-pm"],director:["with-director"]}[r];
+  const active=S.bids.filter(b=>q.includes(b.lbpStatus));
+  const mine=S.bids.filter(b=> r==="pricer"?b.type==="RPG":b.type==="Exception");
+  return LBP_LEDE+`
+  <div class="card" style="box-shadow:none"><h3>My Work List <span class="plat">${active.length} to action</span></h3>
+    <div class="pad">
+      ${active.length?`<div class="wl">${active.map(b=>wlRow(b)).join("")}</div>`:`<div class="callout good">Nothing waiting on you.</div>`}
+      <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">All ${r==="pricer"?"Repricing":"Exception"} bids</div>
+      <table class="sheet"><thead><tr><th>Bid</th><th>Account</th><th>Type</th><th>Status</th><th>Decision</th></tr></thead>
+        <tbody>${mine.map(b=>`<tr class="click" data-act="lbp-open" data-id="${b.id}">
+          <td class="mono">${b.id}</td><td><b>${bidAcct(b).name}</b></td><td>${typeLabel(b.type)}</td>
+          <td>${statusPill(b.lbpStatus)}</td><td>${decisionPill(b.decision)}</td></tr>`).join("")}</tbody></table>
+    </div>
+  </div>`;
+}
+function wlRow(b){
+  const a=bidAcct(b);
+  return `<div class="wlrow ${b.type==="Exception"?"exc":"rpg"}" data-act="lbp-open" data-id="${b.id}">
+    <span class="stripe"></span>
+    <span><span class="m1">${a.name} <span class="pill ${b.type==="Exception"?"yellow":"info"}">${typeLabel(b.type)}</span> ${statusPill(b.lbpStatus)}</span>
+      <span class="m2">${b.id} · ${a.geo}/${a.vertical} · ${esc(b.description)}</span></span>
+    <span class="chev">›</span></div>`;
+}
+
+function lbpSaleList(){
   const book=S.saleBook;
-  const accOpts=S.accounts.filter(a=>a.mgr===book).map(a=>`<option value="${a.id}">${a.name} · ${a.geo} · ${a.vertical}${a.track?` (in ${a.track})`:""}</option>`).join("");
+  const accOpts=S.accounts.filter(a=>a.mgr===book).map(a=>`<option value="${a.id}">${a.name} · ${a.geo} · ${a.vertical}${a.track?` (in ${typeLabel(a.track==="RPG"?"RPG":"Exception")})`:""}</option>`).join("");
   const sa=S.sel.saleAcct||S.accounts.find(a=>a.mgr===book).id;
   const wl=S.bids.filter(b=>{const a=bidAcct(b); return a.mgr===book && (b.lbpStatus==="sale-confirm" || (b.lbpStatus==="closed" && a.unread.sale));});
-  return `
+  return LBP_LEDE+`
   <div class="grid2">
-    <div class="card" style="box-shadow:none">
-      <h3>New bid request <span class="plat">My Bid Requests</span></h3>
+    <div class="card" style="box-shadow:none"><h3>New bid request <span class="plat">My Bid Requests</span></h3>
       <div class="pad stack">
         <div class="grid2">
-          <div class="field"><label>Sales Rep book</label>
-            <select data-input="saleBook">${SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("")}</select></div>
-          <div class="field"><label>Account</label>
-            <select data-input="saleAcct">${accOpts.replace(`value="${sa}"`,`value="${sa}" selected`)}</select></div>
+          <div class="field"><label>Sales Rep book</label><select data-input="saleBook">${SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("")}</select></div>
+          <div class="field"><label>Account</label><select data-input="saleAcct">${accOpts.replace(`value="${sa}"`,`value="${sa}" selected`)}</select></div>
         </div>
         <div class="grid2">
+          <div class="field"><label>Bid Type</label>
+            <select data-input="brBidType"><option>Repricing</option><option>Exception</option></select></div>
           <div class="field"><label>Bid Request Type</label>
-            <select data-input="brType"><option>Renewal</option><option>New Business</option><option>Repricing</option></select></div>
-          <div class="field"><label>Fulfillment Method</label>
-            <select data-input="brFul"><option>Direct</option><option>T1 Partner</option></select></div>
+            <select data-input="brType"><option>Renewal</option><option>New Business</option></select></div>
         </div>
-        <div class="field"><label>Description — type <span class="mono">RPG</span> or <span class="mono">Exception</span></label>
-          <textarea data-input="brDesc" placeholder="e.g. RPG — Q1 renewal, 120 units, full per guidance">${esc(S._brDesc||"")}</textarea></div>
-        <div class="field"><label>Lines (from PN list)</label><div class="ro">${CATALOG.slice(0,3).map(c=>c.pn).join(" · ")}</div></div>
+        <div class="grid2">
+          <div class="field"><label>Fulfillment Method</label>
+            <select data-input="brFul"><option>Direct</option><option>Indirect</option></select></div>
+          <div class="field"><label>Country</label><div class="ro">${A(sa).geo==="NA"?"United States":A(sa).geo==="EMEA"?"Germany":"Japan"}</div></div>
+        </div>
+        <div class="field"><label>Description</label><textarea data-input="brDesc" placeholder="e.g. Q1 renewal, 120 units, full per guidance">${esc(S._brDesc||"")}</textarea></div>
         <div><button class="btn primary" data-act="lbp-submit">Submit bid request</button></div>
-        <div class="tiny">The platform reads the Description: “exception” anywhere → Exception lane (a <b>Sync to Tracker</b> window opens right away); otherwise RPG → the bid goes to a Pricer.</div>
+        <div class="tiny">Bid Type <b>Repricing</b> → the bid goes to a Pricer. <b>Exception</b> → a <b>Sync to Tracker</b> window opens right away and the Profit Manager picks it up.</div>
       </div>
     </div>
-    <div class="card" style="box-shadow:none">
-      <h3>My Work List <span class="plat">${wl.length} need confirm</span></h3>
+    <div class="card" style="box-shadow:none"><h3>My Work List <span class="plat">${wl.length} need attention</span></h3>
       <div class="pad">
-        ${wl.length? `<div class="wl">${wl.map(b=>{ const a=bidAcct(b);
-          const done=b.lbpStatus==="closed";
-          return `<div class="wlrow ${done?(b.decision==="Rejected"?"rej":"done"):(b.type==="Exception"?"exc":"rpg")}">
+        ${wl.length?`<div class="wl">${wl.map(b=>{const a=bidAcct(b); const done=b.lbpStatus==="closed";
+          return `<div class="wlrow ${done?(b.decision==="Rejected"?"rej":"done"):(b.type==="Exception"?"exc":"rpg")}" data-act="lbp-open" data-id="${b.id}">
             <span class="stripe"></span>
-            <span><span class="m1">${a.name} ${b.type==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill info">RPG</span>`} ${done?decisionPill(b.decision):""}</span>
+            <span><span class="m1">${a.name} <span class="pill ${b.type==="Exception"?"yellow":"info"}">${typeLabel(b.type)}</span> ${done?decisionPill(b.decision):`<span class="pill info">to confirm</span>`}</span>
               <span class="m2">${b.id} · ${esc(b.description)}</span></span>
-            <span class="acts">
-              ${done? `<button class="btn ghost sm" data-act="sale-open-result" data-id="${b.id}">Open result</button>`
-                : `<button class="btn primary sm" data-act="sale-confirm-open" data-id="${b.id}">Confirm</button>`}
-            </span></div>`; }).join("")}</div>`
-          : `<div class="callout good">Nothing waiting on you. When a Pricer approves an RPG bid, or an exception is decided, it lands here to confirm.</div>`}
-        <div class="callout" style="margin-top:12px">🔒 <b>RPT is not available to Sale</b> — it's a Pricer / PM / Director tool.</div>
+            <span class="chev">›</span></div>`; }).join("")}</div>`
+          :`<div class="callout good">Nothing waiting on you.</div>`}
+        <div class="callout" style="margin-top:12px">🔒 RPT / LPS are Pricer / PM / Director tools — you'll see their comment feedback when you open a bid.</div>
       </div>
     </div>
   </div>`;
 }
 
-function lbpQueue(role,status){
-  return S.bids.filter(b=>b.lbpStatus===status);
-}
-function wlRow(b,role){
-  const a=bidAcct(b);
-  const rec=rptRecord(b.id,role);
-  const kls=b.type==="Exception"?"exc":"rpg";
-  let acts="";
-  if(role==="pricer"){
-    acts=`<button class="btn ghost sm" data-act="rpt-open" data-id="${b.id}" data-role="pricer">${rec?"Reopen RPT":"Open RPT"}</button>
-      ${rec?`<span class="pill mut">RPT ${rec.id}</span>`:""}
-      <button class="btn ok sm" data-act="lbp-approve" data-id="${b.id}" ${rec?"":"disabled"}>Approve</button>
-      <button class="btn danger sm" data-act="lbp-reject-open" data-id="${b.id}" ${rec?"":"disabled"}>Reject</button>`;
-  } else if(role==="pm"){
-    acts=`<button class="btn ghost sm" data-act="rpt-open" data-id="${b.id}" data-role="pm">${rec?"Reopen RPT":"Open RPT"}</button>
-      ${rec?`<span class="pill mut">RPT ${rec.id}</span>`:""}
-      <button class="btn primary sm" data-act="lbp-pm-submit" data-id="${b.id}" ${rec?"":"disabled"}>Submit to Director</button>`;
-  } else if(role==="director"){
-    acts=`<button class="btn ghost sm" data-act="rpt-open" data-id="${b.id}" data-role="director">${rec?"Reopen RPT":"Open RPT"}</button>
-      ${rec?`<span class="pill mut">RPT ${rec.id}</span>`:""}
-      <button class="btn ok sm" data-act="lbp-approve" data-id="${b.id}" ${rec?"":"disabled"}>Approve</button>
-      <button class="btn danger sm" data-act="lbp-reject-open" data-id="${b.id}" ${rec?"":"disabled"}>Reject</button>`;
-  }
-  return `<div class="wlrow ${kls}"><span class="stripe"></span>
-    <span><span class="m1">${a.name} <span class="pill ${b.type==="Exception"?"yellow":"info"}">${b.type}</span> ${statusPill(b.lbpStatus)}</span>
-      <span class="m2">${b.id} · ${a.geo}/${a.vertical} · ${esc(b.description)}</span></span>
-    <span class="acts">${acts}</span></div>`;
+function lbpBidDetail(b){
+  const a=bidAcct(b), r=S.role.lbp;
+  const lm=b.lines.map(l=>{ const mg=lineMargin(l),p=linePrice(l);
+    return `<tr class="${l.flag?"lineflag":""}"><td class="mono">${l.pn}</td><td class="mono">${l.memory} · ${l.ssd}</td>
+      <td class="num">${money(l.base)}</td><td class="num">${p!=null?money(p):`<span class="pill warn">manual</span>`}</td>
+      <td class="num">${mg==null?"—":mg.toFixed(1)+"%"}</td></tr>`; }).join("");
+  const bm=bidMargin(b);
+
+  let actions="";
+  if(r==="sale"){
+    if(b.lbpStatus==="sale-confirm") actions=`<button class="btn primary" data-act="sale-confirm-open" data-id="${b.id}">Confirm &amp; Sync to Tracker</button>`;
+    else actions=`<span class="tiny">Read-only — this is a Pricer / PM / Director bid. Feedback below.</span>`;
+  } else if(r==="pricer" && b.type==="RPG"){
+    const open=["with-pricer"].includes(b.lbpStatus);
+    actions=`<button class="btn ok" data-act="lbp-act" data-id="${b.id}" data-kind="approve" ${open?"":"disabled"}>Approve</button>
+      <button class="btn danger" data-act="lbp-act" data-id="${b.id}" data-kind="reject" ${open?"":"disabled"}>Reject</button>
+      <button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign</button>`;
+  } else if(r==="pm" && b.type==="Exception"){
+    const open=b.lbpStatus==="with-pm";
+    actions=`<button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign to Director</button>
+      <span class="tiny">The exception case (past performance, materials, send/save) is filled on the <b>Tracker</b> → Profit Mgr.</span>`;
+  } else if(r==="director" && b.type==="Exception"){
+    const open=b.lbpStatus==="with-director";
+    actions=`<button class="btn ghost" data-act="lbp-act" data-id="${b.id}" data-kind="reassign" ${open?"":"disabled"}>Reassign to PM</button>
+      <span class="tiny">Approve / reject the exception on the <b>Tracker</b> → Director / CFO.</span>`;
+  } else actions=`<span class="tiny">No action for this role on this bid.</span>`;
+
+  return `
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn ghost sm" data-act="lbp-back">← Work list</button>
+    <b style="font-family:var(--fs-display);font-size:19px">${a.name}</b>
+    <span class="pill ${b.type==="Exception"?"yellow":"info"}">${typeLabel(b.type)}</span>
+    ${statusPill(b.lbpStatus)} ${decisionPill(b.decision)}
+  </div>
+  <div class="stack">
+    <div class="card" style="box-shadow:none"><div class="pad">
+      <div class="bidsum">
+        <div class="field"><label>Bid ID</label><div class="ro">${b.id}${b.manual?" · manual":""}</div></div>
+        <div class="field"><label>Account · Geo</label><div class="ro">${a.name} · ${a.geo}</div></div>
+        <div class="field"><label>Vertical</label><div class="ro">${a.vertical}</div></div>
+        <div class="field"><label>Bid Request Type</label><div class="ro">${b.bidReqType}</div></div>
+        <div class="field"><label>Fulfillment</label><div class="ro">${b.fulfillment}</div></div>
+        <div class="field"><label>Submitted by</label><div class="ro">${b.submittedBy} · ${b.submittedAt}</div></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Description</label><div class="ro">${esc(b.description||"—")}</div></div>
+    </div></div>
+
+    <div class="card" style="box-shadow:none"><h3>Bid lines <span class="plat">${b.rptRan?"priced in RPT":"not yet priced"}</span></h3>
+      <div class="pad" style="overflow-x:auto">
+        <table class="sheet"><thead><tr><th>PN</th><th>Memory · SSD</th><th class="num">Prev</th><th class="num">New</th><th class="num">Margin</th></tr></thead>
+          <tbody>${lm}</tbody>
+          <tfoot><tr class="total"><td colspan="4">Blended margin</td><td class="num">${bm==null?"—":bm.toFixed(1)+"%"}</td></tr></tfoot></table>
+        <div class="toolrow" style="margin-top:12px">
+          ${canRPT(r)? `<button class="btn ghost" data-act="tool-open" data-id="${b.id}" data-tool="rpt">Open RPT</button>
+            <button class="btn ghost" data-act="tool-open" data-id="${b.id}" data-tool="lps">Open LPS</button>`
+            : `<span class="tiny">🔒 RPT / LPS are Pricer / PM / Director tools.</span>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="box-shadow:none"><h3>Actions &amp; comments</h3>
+      <div class="pad stack">
+        <div class="toolrow">${actions}</div>
+        <div>
+          <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Comment thread ${r!=="sale"&&(b.lbpStatus==="closed"||b.lbpStatus==="sale-confirm")?"":""}</div>
+          <div class="commentthread">
+            ${b.comments.length? b.comments.map(c=>`<div class="cmt ${c.kind}">
+              <div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")
+              : `<div class="tiny">No comments yet.</div>`}
+          </div>
+          ${r!=="sale" && b.lbpStatus!=="closed" ? `
+            <div class="field" style="margin-top:10px"><label>Add a comment (no state change)</label>
+              <textarea data-input="freeCmt" data-id="${b.id}" placeholder="note for the record / for Sale…">${esc(S._freeCmt||"")}</textarea></div>
+            <button class="btn ghost sm" data-act="lbp-comment" data-id="${b.id}">Post comment</button>`:""}
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 
-function lbpPricer(){
-  const q=lbpQueue("pricer","with-pricer");
+/* ---------- RPT (identical for pricer / PM / director) ---------- */
+function rptScreen(b){
+  const a=bidAcct(b), role=S.role.lbp, rec=rptRecord(b.id,role);
+  const ran=b.rptRan||!!rec;
+  const steps=[
+    ["Bid + comment auto-ingested",`Bid ${b.id} from LBP · comment parsed`],
+    ["Auto-fetch ref bid + original price",`ref ${b.lines[0].refBid}`],
+    ["Auto-read memory / SSD config",`DDR5 / G4 · G4P resolved per PN`],
+    ["Auto-match PN → catalog model",`special CPUs flagged for a manual price`],
+    ["Apply guidance uplift · line-by-line margin",`GTP FY26 Aug · +10%`]
+  ];
+  const checks=steps.map((s,i)=>`<div class="check ${ran?"pass":""}"><span class="ico">${ran?"✓":i+1}</span>
+    <span><span class="lab">${s[0]}</span><span class="det">${ran?s[1]:"&nbsp;"}</span></span></div>`).join("");
+  let result;
+  if(!ran){
+    result=`<div style="margin-top:12px"><button class="btn primary" data-act="rpt-run" data-id="${b.id}">▶ Run</button></div>`;
+  } else {
+    const rows=b.lines.map((l,i)=>{ const mg=lineMargin(l);
+      const inp=`<input class="mono" style="width:104px;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);text-align:right" placeholder="${l.flag?"manual $":""}" data-linebid="${b.id}" data-line="${i}" value="${hasManual(l)?l.manualPrice:(l.flag?"":l.newPrice.toFixed(2))}">`;
+      return `<tr class="${l.flag?"lineflag":""}">
+        <td class="mono">${l.pn}<div class="tiny">${l.family}</div></td>
+        <td class="mono">${l.refBid}</td><td class="num">${money(l.base)}</td>
+        <td class="mono">${l.memory}<div class="tiny">${l.ssd}</div></td>
+        <td class="mono">${l.cpu}${l.flag?` <span class="pill bad">RTX · manual</span>`:""}</td>
+        <td class="num">${inp}</td>
+        <td class="num" id="lm-${b.id}-${i}">${mg==null?`<span class="pill warn">enter $</span>`:mg.toFixed(1)+"%"}</td></tr>`;
+    }).join("");
+    const bm=bidMargin(b);
+    result=`<div style="overflow-x:auto;margin-top:12px"><table class="sheet">
+      <thead><tr><th>PN / model</th><th>Ref bid</th><th class="num">Orig.</th><th>Memory / SSD</th><th>CPU</th><th class="num">New price</th><th class="num">Margin</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr class="total"><td colspan="6">Blended margin</td><td class="num" id="bm-${b.id}">${bm==null?`<span class="pill warn">enter manual line</span>`:bm.toFixed(1)+"%"}</td></tr></tfoot>
+      </table></div>
+      <div class="field" style="margin-top:12px"><label>Extra notes (added to the pricing note)</label>
+        <textarea data-input="pricerNote" data-id="${b.id}" placeholder="anything else the record needs…">${esc(b.pricerNote)}</textarea></div>`;
+  }
   return `
-  <div class="card" style="box-shadow:none"><h3>My Work List — RPG bids <span class="plat">${q.length} to price</span></h3>
-    <div class="pad">
-      ${q.length?`<div class="wl">${q.map(b=>wlRow(b,"pricer")).join("")}</div>`:`<div class="callout good">No RPG bids waiting.</div>`}
-      <div class="callout" style="margin-top:12px">Open RPT to run the calc and save a pricing record. <b>Approve / Reject unlock once an RPT record is saved.</b> Approving sends the bid to Sale to confirm.</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn ghost sm" data-act="tool-close">← Back to bid</button>
+    <b style="font-family:var(--fs-display);font-size:18px">RPT · ${a.name}</b>
+    <span class="tiny mono">${b.id} · ${typeLabel(b.type)} · same tool for Pricer / PM / Director</span>
+    <span style="margin-left:auto"></span>
+    ${rec?`<span class="pill good">saved · ${rec.id}</span>`:""}
+  </div>
+  <div class="stack">
+    <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Automated repricing calc <span class="plat">${b.id}</span></div>
+      <div class="body"><div class="checks">${checks}</div>${result}</div></div>
+    <div class="field"><label>Pricing note (generated)</label>
+      <div class="notebox" id="rpt-note">${esc(ran?pricingNote(b):"Run first to generate the note.")}</div></div>
+    <div class="toolrow">
+      <button class="btn ghost" data-act="rpt-lps" data-id="${b.id}" ${b.lpsSynced||!ran?"disabled":""}>${b.lpsSynced?"✓ Synced to LPS":"↔ Sync to LPS"}</button>
+      <button class="btn ghost" data-act="rpt-copy" data-id="${b.id}" ${ran?"":"disabled"}>⧉ Copy pricing note</button>
+      <button class="btn primary" data-act="rpt-save" data-id="${b.id}" ${ran?"":"disabled"}>${rec?"Update saved record":"Save record"}</button>
     </div>
+    <div class="callout">RPT calculates and records — it never approves. Repricing bids are decided on the LBP bid; exception bids on the Tracker.</div>
   </div>`;
 }
-function lbpPM(){
-  const q=lbpQueue("pm","with-pm");
+function lpsScreen(b){
+  const a=bidAcct(b);
+  const rows=b.lines.map(l=>{ const p=linePrice(l);
+    return `<tr><td class="mono">${l.pn}</td><td class="num">${money(l.base)}</td>
+      <td class="num">${b.lpsSynced&&p!=null?money(p):"<span class='tiny'>not synced</span>"}</td>
+      <td class="num">${b.lpsSynced&&p!=null?((p-l.base)>=0?"+":"")+money(p-l.base):"—"}</td></tr>`; }).join("");
   return `
-  <div class="card" style="box-shadow:none"><h3>My Work List — Exception intake <span class="plat">${q.length} to compile</span></h3>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn ghost sm" data-act="tool-close">← Back to bid</button>
+    <b style="font-family:var(--fs-display);font-size:18px">LPS · ${a.name}</b>
+    <span class="tiny mono">${b.id} · embedded in LBP</span>
+  </div>
+  <div class="card" style="box-shadow:none"><h3>LPS — contract pricing <span class="plat">read from LPS</span></h3>
     <div class="pad">
-      ${q.length?`<div class="wl">${q.map(b=>wlRow(b,"pm")).join("")}</div>`:`<div class="callout good">No exceptions waiting.</div>`}
-      <div class="callout" style="margin-top:12px">Open RPT to compile the case (past performance + materials) and save the record. <b>Submit to Director</b> unlocks once the RPT record is saved. Most PM time is other pricing (transition / NPI) handled outside this tool.</div>
-    </div>
-  </div>`;
-}
-function lbpDirector(){
-  const q=lbpQueue("director","with-director");
-  return `
-  <div class="card" style="box-shadow:none"><h3>My Work List — Exceptions for decision <span class="plat">${q.length} to review</span></h3>
-    <div class="pad">
-      ${q.length?`<div class="wl">${q.map(b=>wlRow(b,"director")).join("")}</div>`:`<div class="callout good">Nothing to decide.</div>`}
-      <div class="callout" style="margin-top:12px">Open RPT to see the PM's case + run the KPI impact calculator, then save the record. <b>Approve / Reject unlock once saved</b>; the decision syncs to the Tracker and notifies PM + Sale.</div>
+      <table class="sheet"><thead><tr><th>PN</th><th class="num">LPS contract price</th><th class="num">RPT new price</th><th class="num">Δ</th></tr></thead>
+        <tbody>${rows}</tbody></table>
+      <div class="callout ${b.lpsSynced?"good":"info"}" style="margin-top:12px">
+        ${b.lpsSynced?`✓ RPT pushed the new pricing to LPS. `:`RPT has not synced this bid to LPS yet. `}
+        LPS is already embedded in LBP; RPT writes approved pricing back here. <span class="tiny">Write permissions to LPS still to be confirmed with the platform team.</span></div>
     </div>
   </div>`;
 }
@@ -708,122 +776,133 @@ function lbpRecords(){
   const q=(S.sel.recSearch||"").toLowerCase();
   const list=S.rptRecords.filter(r=>!q||r.id.toLowerCase().includes(q)||r.account.toLowerCase().includes(q)||r.bidId.toLowerCase().includes(q)||r.role.includes(q));
   return `
-  <p class="lede"><b>RPT records.</b> Every “Save record” in RPT lands here — searchable later by anyone. RPT doesn't approve anything; this is the audit trail of what was calculated and noted.</p>
-  <div class="card">
-    <h3>Saved RPT records <span class="plat">${list.length} / ${S.rptRecords.length}</span></h3>
+  <p class="lede"><b>RPT records.</b> Every “Save record” in RPT lands here — searchable later by anyone. This is the audit trail of what was calculated and noted; RPT itself never approves.</p>
+  <div class="card"><h3>Saved RPT records <span class="plat">${list.length} / ${S.rptRecords.length}</span></h3>
     <div class="pad">
       <div class="field" style="max-width:280px;margin-bottom:12px"><label>Search — id / account / bid / role</label>
         <input data-input="recSearch" value="${esc(S.sel.recSearch)}" placeholder="e.g. Nike"></div>
-      <table class="sheet">
-        <thead><tr><th>Record</th><th>Bid</th><th>Account</th><th>Kind</th><th>Saved by</th><th>When</th></tr></thead>
+      <table class="sheet"><thead><tr><th>Record</th><th>Bid</th><th>Account</th><th>Saved by</th><th>Role</th><th>When</th></tr></thead>
         <tbody>${list.map(r=>`<tr class="click" data-act="rec-view" data-id="${r.id}">
           <td class="mono">${r.id}</td><td class="mono">${r.bidId}</td><td><b>${r.account}</b></td>
-          <td>${r.kind.replace("-"," ")}</td><td>${r.savedBy}</td><td class="mono">${r.ts}</td></tr>`).join("")
-          || `<tr><td colspan="6" class="tiny">No records match.</td></tr>`}</tbody>
-      </table>
-    </div>
-  </div>`;
-}
-
-/* ---------- RPT screen ---------- */
-function rptScreen(){
-  const b=B(S.rpt.open); const a=bidAcct(b); const role=S.rpt.role;
-  const rec=rptRecord(b.id,role);
-  let body;
-  if(role==="pricer") body=rptPricer(b);
-  else if(role==="pm") body=rptPM(b,a);
-  else body=rptDirector(b,a);
-  const noteText = role==="pricer"?pricingNote(b) : role==="pm"?excCaseNote(a) : kpiNote(a);
-  return `
-  <div class="appwin">
-    <div class="bar"><span class="dots"><i></i><i></i><i></i></span> RPT · Repricing Tool
-      <span class="plat">embedded in LBP · ${role} · ${b.id}</span></div>
-    <div class="body">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-        <button class="btn ghost sm" data-act="rpt-close">← Back to LBP</button>
-        <b style="font-family:var(--fs-display);font-size:18px">${a.name}</b>
-        <span class="tiny mono">${a.geo}/${a.vertical} · ${b.type} · ${esc(b.description)}</span>
-        <span style="margin-left:auto"></span>
-        ${rec?`<span class="pill good">saved · ${rec.id}</span>`:``}
-      </div>
-      ${body}
-      <div class="stack" style="margin-top:16px">
-        <div class="field"><label>Pricing note (generated) — one-click copy</label>
-          <div class="notebox" id="rpt-note">${esc(S.rpt.ran||rec ? noteText : "Run first to generate the note.")}</div></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          ${role==="pricer"?`<button class="btn ghost" data-act="rpt-lps" data-id="${b.id}" ${b.lpsSynced?"disabled":""} ${S.rpt.ran?"":"disabled"}>${b.lpsSynced?"✓ Synced to LPS":"↔ Sync to LPS"}</button>`:""}
-          <button class="btn ghost" data-act="rpt-copy" data-id="${b.id}" ${S.rpt.ran||rec?"":"disabled"}>⧉ Copy pricing note</button>
-          <button class="btn primary" data-act="rpt-save" data-id="${b.id}" ${S.rpt.ran?"":"disabled"}>${rec?"Update saved record":"Save record"}</button>
-        </div>
-        <div class="callout">RPT does not approve or reject. Saving the record unlocks the decision on the LBP work list.</div>
-      </div>
-    </div>
-  </div>`;
-}
-function rptPricer(b){
-  const steps=[
-    ["Bid + comment auto-ingested",`Bid ${b.id} from LBP · comment parsed`],
-    ["Auto-fetch ref bid + original price",`ref ${b.lines[0].refBid}`],
-    ["Auto-read memory / SSD config",`DDR5 / G4 · G4P resolved per PN`],
-    ["Auto-match PN → catalog model",`special CPUs flagged for a manual price`],
-    ["Apply guidance uplift · line-by-line margin",`GTP FY26 Aug · +10%`]
-  ];
-  const ran=S.rpt.ran;
-  const checks=steps.map((s,i)=>`<div class="check ${ran?"pass":""}"><span class="ico">${ran?"✓":i+1}</span>
-    <span><span class="lab">${s[0]}</span><span class="det">${ran?s[1]:"&nbsp;"}</span></span></div>`).join("");
-  if(!ran) return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Automated calc</div>
-    <div class="body"><div class="checks">${checks}</div>
-    <div style="margin-top:12px"><button class="btn primary" data-act="rpt-run">▶ Run</button></div></div></div>`;
-  const rows=b.lines.map((l,i)=>{ const mg=lineMargin(l);
-    const inp=`<input class="mono" style="width:104px;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);text-align:right" placeholder="${l.flag?"manual $":""}" data-linebid="${b.id}" data-line="${i}" value="${hasManual(l)?l.manualPrice:(l.flag?"":l.newPrice.toFixed(2))}">`;
-    return `<tr class="${l.flag?"lineflag":""}">
-      <td class="mono">${l.pn}<div class="tiny">${l.family}</div></td>
-      <td class="mono">${l.refBid}</td><td class="num">${money(l.base)}</td>
-      <td class="mono">${l.memory}<div class="tiny">${l.ssd}</div></td>
-      <td class="mono">${l.cpu}${l.flag?` <span class="pill bad">RTX · manual</span>`:""}</td>
-      <td class="num">${inp}</td>
-      <td class="num" id="lm-${b.id}-${i}">${mg==null?`<span class="pill warn">enter $</span>`:mg.toFixed(1)+"%"}</td></tr>`;
-  }).join("");
-  const bm=bidMargin(b);
-  return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Line-by-line result <span class="plat">edit any price</span></div>
-    <div class="body">
-      <div class="checks">${checks}</div>
-      <div style="overflow-x:auto;margin-top:12px"><table class="sheet">
-        <thead><tr><th>PN / model</th><th>Ref bid</th><th class="num">Orig.</th><th>Memory / SSD</th><th>CPU</th><th class="num">New price</th><th class="num">Margin</th></tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="total"><td colspan="6">Blended margin</td><td class="num" id="bm-${b.id}">${bm==null?`<span class="pill warn">enter manual line</span>`:bm.toFixed(1)+"%"}</td></tr></tfoot>
-      </table></div>
-      <div class="field" style="margin-top:12px"><label>Extra notes (added to the pricing note)</label>
-        <textarea data-input="pricerNote" data-id="${b.id}" placeholder="anything else the record needs…">${esc(b.pricerNote)}</textarea></div>
+          <td>${r.savedBy}</td><td>${r.role}</td><td class="mono">${r.ts}</td></tr>`).join("")||`<tr><td colspan="6" class="tiny">No records match.</td></tr>`}</tbody></table>
     </div></div>`;
 }
-function rptPM(b,a){
-  const e=a.exception; const ran=S.rpt.ran;
-  if(!ran) return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Exception case</div>
-    <div class="body"><div class="callout info">Run to pull the account context, then compile the case.</div>
-    <div style="margin-top:12px"><button class="btn primary" data-act="rpt-run">▶ Run</button></div></div></div>`;
-  return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Exception case builder</div>
-    <div class="body stack">
+
+/* ============================================================ Tracker */
+function vwTrkSale(){
+  const book=S.saleBook;
+  const list=S.accounts.filter(a=>a.mgr===book);
+  const stageLabel=a=>{ if(a.track!=="Exception")return "—"; const st=a.exception?.stage;
+    return st==="PM-intake"?"PM compiling":st==="Director-review"?"At Director/CFO":st==="Approved"?"Approved":st==="Rejected"?"Rejected":"—"; };
+  const selA=S.sel.saleAcct&&A(S.sel.saleAcct);
+  const relBid=selA&&S.bids.find(b=>b.accountId===selA.id);
+  return `
+  <p class="lede"><b>Layer 2 — Tracker (PowerApps, separate app).</b> The <b>Sync to Tracker</b> window in LBP writes here. Every account in a manager's book: lane, who updated it, when, exception progress — plus the feedback comments from Pricer / Director.</p>
+  <div class="statgrid" style="margin-bottom:16px">
+    <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
+    <div class="stat"><div class="v">${list.filter(a=>a.track==="RPG").length}</div><div class="l">On Repricing</div></div>
+    <div class="stat"><div class="v">${list.filter(a=>a.track==="Exception").length}</div><div class="l">In exception</div></div>
+    <div class="stat"><div class="v">${list.filter(a=>a.unread.sale).length}</div><div class="l">Unread results</div></div>
+  </div>
+  <div class="card"><h3>Sale dashboard — account book <span class="plat">Main Table</span></h3>
+    <div class="pad">
+      <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
+        <div class="field" style="max-width:220px"><label>Sale Manager</label>
+          <select data-input="saleBook">${SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("")}</select></div>
+        <button class="btn ghost sm" data-act="add-open" data-who="sale">+ Add new</button>
+      </div>
+      <table class="sheet"><thead><tr><th>Account</th><th>Lane</th><th>Guidance</th><th>Last updated by</th><th>When</th><th>Exception progress</th></tr></thead>
+        <tbody>${list.map(a=>`<tr class="click" data-act="trk-sale-open" data-id="${a.id}">
+          <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread</span>`:""}</td>
+          <td>${a.track==="RPG"?`<span class="pill info">Repricing</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill mut">—</span>`}</td>
+          <td class="mono">${a.guidance||"—"}</td><td class="mono">${a.lastBy||"—"}</td><td class="mono">${a.lastAt||"—"}</td>
+          <td>${stageLabel(a)}</td></tr>`).join("")}</tbody></table>
+    </div></div>
+  ${selA? `<div class="card" style="margin-top:16px"><h3>${selA.name} — detail</h3><div class="pad stack">
+      ${selA.exception&&selA.exception.decision? `<div class="callout ${selA.exception.decision==="Approved"?"good":"bad"}"><b>Exception ${selA.exception.decision}.</b> ${esc(selA.exception.decisionNote)}</div>`:""}
+      ${relBid&&relBid.comments.length? `<div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Feedback on ${relBid.id}</div>
+        <div class="commentthread">${relBid.comments.map(c=>`<div class="cmt ${c.kind}"><div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")}</div></div>`
+        : `<div class="tiny">No feedback comments yet.</div>`}
+    </div></div>`:""}`;
+}
+
+function boardLegend(){
+  return `<div class="legend">
+    <span><i style="background:var(--yellow)"></i> exception — needs action</span>
+    <span><i style="background:var(--info)"></i> Repricing</span>
+    <span><i style="background:var(--good)"></i> approved</span>
+    <span><i style="background:var(--bad)"></i> rejected</span>
+    <span><i style="background:var(--border-strong)"></i> in flight elsewhere</span></div>`;
+}
+function brow(a,c,role){
+  const sel=(role==="pm"?S.sel.trkPM:S.sel.trkDir)===a.id;
+  const unread=role==="pm"?a.unread.pm:false;
+  return `<div class="brow ${c} ${sel?"sel":""}" data-act="trk-board" data-role="${role}" data-id="${a.id}">
+    <span class="stripe"></span>
+    <span><span class="nm">${a.name}${unread?`<span class="unread"></span>`:""}</span>
+      <span class="meta">${a.geo} · ${a.vertical} · ${a.track==="Exception"?(a.exception?.stage||""):typeLabel(a.track)}</span></span>
+    <span>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):a.track==="Exception"?`<span class="pill yellow">exc</span>`:`<span class="pill info">RPG</span>`}</span></div>`;
+}
+function vwTrkPM(){
+  const board=sortedBoard("pm");
+  const sel=S.sel.trkPM?A(S.sel.trkPM):(board[0]&&board[0].a);
+  return `
+  <p class="lede"><b>Layer 2 — Tracker · Profit Manager.</b> This is where the exception case is written: past performance, materials, and <b>Save</b> (draft) or <b>Send</b> (→ the account's exception appears on the Director's Tracker). The internal price rework happens in LBP → RPT.</p>
+  ${boardLegend()}
+  <div style="margin-bottom:10px"><button class="btn ghost sm" data-act="add-open" data-who="pm">+ Add new</button></div>
+  <div class="board">
+    <div class="blist">${board.map(({a,c})=>brow(a,c,"pm")).join("")||`<div class="callout">Nothing in a lane.</div>`}</div>
+    ${sel?trkPMDetail(sel):`<div class="bdetail"><div class="dbody"><div class="callout">Pick an account.</div></div></div>`}
+  </div>`;
+}
+function trkPMDetail(a){
+  const e=a.exception;
+  const editable=e&&e.stage==="PM-intake";
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name} ${a.unread.pm?`<span class="pill bad">● unread</span>`:""}</h3>
+      <div class="sub">${a.geo} · ${a.vertical} · GAM ${a.gam} · Sale Mgr ${a.mgr} · PM ${PM_OF[a.mgr]}</div></div>
+    <div class="dbody">
+      ${a.unread.pm&&e?.decision? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>Director/CFO ${e.decision}.</b> ${esc(e.decisionNote)}
+        <div style="margin-top:8px"><button class="btn ghost sm" data-act="trk-mark-read" data-id="${a.id}">Mark read</button></div></div>`:""}
+      ${!e? `<div class="callout">Repricing account — not in the exception flow. <button class="btn ghost sm" data-act="pm-flag" data-id="${a.id}">Flag as Exception</button></div>` : `
       <div class="grid3">
-        <div class="field"><label>Account</label><div class="ro">${a.name} · ${a.geo}</div></div>
-        <div class="field"><label>Vertical / GAM</label><div class="ro">${a.vertical} · ${a.gam}</div></div>
+        <div class="field"><label>Stage</label><div class="ro">${e.stage}</div></div>
         <div class="field"><label>Requested</label><div class="ro">${esc(e.ask||"—")}</div></div>
+        <div class="field"><label>Draft</label><div class="ro">${e.draftSaved?"saved":"unsaved"}</div></div>
       </div>
       <div class="field"><label>Sale's reason</label><div class="callout">${esc(e.reason||"—")}</div></div>
       <div class="field"><label>Account past performance (for the CFO)</label>
-        <textarea data-input="perf" data-id="${a.id}" placeholder="Guidance history, renewal risk, competitive context, volume…">${esc(e.performance)}</textarea></div>
+        ${editable? `<textarea data-input="perf" data-id="${a.id}" placeholder="Guidance history, renewal risk, competitive context, volume…">${esc(e.performance)}</textarea>`
+          : `<div class="callout">${esc(e.performance||"—")}</div>`}</div>
       <div class="field"><label>Materials</label>
         <div class="matlist">${(e.materials.length?e.materials:["(none attached)"]).map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")}</div>
-        <div style="margin-top:8px"><button class="btn ghost sm" data-act="pm-attach" data-id="${a.id}">+ Attach TMCGP bridge</button></div></div>
-    </div></div>`;
+        ${editable?`<div style="margin-top:8px"><button class="btn ghost sm" data-act="pm-attach" data-id="${a.id}">+ Attach TMCGP bridge</button></div>`:""}</div>
+      ${editable? `<div class="toolrow">
+        <button class="btn ghost" data-act="pm-save" data-id="${a.id}">Save draft</button>
+        <button class="btn primary" data-act="pm-send" data-id="${a.id}">Send to Director</button>
+        <button class="btn danger" data-act="pm-reject" data-id="${a.id}">Reject to Sale</button>
+      </div>`
+        : e.stage==="Director-review"? `<div class="callout warn">Sent to Director/CFO on ${e.submittedAt} — awaiting decision.</div>`
+        : `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>${e.decision}.</b> ${esc(e.decisionNote)}</div>`}`}
+    </div>
+  </div>`;
 }
-function rptDirector(b,a){
-  const e=a.exception; const ran=S.rpt.ran;
-  if(!ran) return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Exception review</div>
-    <div class="body"><div class="callout info">Run to load the PM's case and the KPI impact calculator.</div>
-    <div style="margin-top:12px"><button class="btn primary" data-act="rpt-run">▶ Run</button></div></div></div>`;
-  const base=BASELINE.find(x=>x.geo===a.geo&&x.vertical===a.vertical)||BASELINE.find(x=>x.geo===a.geo)||BASELINE[0];
+function vwTrkDir(){
+  const board=sortedBoard("director");
+  const sel=S.sel.trkDir?A(S.sel.trkDir):((board.find(x=>x.c==="yellow")||board[0]||{}).a);
+  return `
+  <p class="lede"><b>Layer 2 — Tracker · Director / CFO.</b> The exception decision is made here. The KPI impact calculator (baseline data source) sits on this screen; <b>Approve</b> / <b>Reject</b> each take a note that flows back to PM + Sale.</p>
+  ${boardLegend()}
+  <div class="board">
+    <div class="blist">${board.map(({a,c})=>brow(a,c,"director")).join("")||`<div class="callout">Nothing in a lane.</div>`}</div>
+    ${sel?trkDirDetail(sel):`<div class="bdetail"><div class="dbody"><div class="callout">Pick an account.</div></div></div>`}
+  </div>`;
+}
+function trkDirDetail(a){
+  const e=a.exception;
+  const yellow=e&&e.stage==="Director-review";
   const C=S.calc;
+  const base=BASELINE.find(x=>x.geo===a.geo&&x.vertical===a.vertical)||BASELINE.find(x=>x.geo===a.geo)||BASELINE[0];
   const rows=C.rows.map((r,i)=>`<tr><td class="tiny" style="text-align:center">${i+1}</td>
     <td><input data-crow="u" data-i="${i}" value="${r.u}"></td>
     <td><input data-crow="rev" data-i="${i}" value="${r.rev}"></td>
@@ -838,149 +917,47 @@ function rptDirector(b,a){
       <tr><td class="metric">TMCGP%</td><td>${k.basePct.toFixed(2)}%</td><td>${k.newPct.toFixed(2)}%</td><td>${k.totPct.toFixed(2)}%</td><td>${pp(k.totPct-k.basePct)}</td><td>${pp(k.bwPct)}</td></tr>
     </table><div class="tiny" style="margin-top:6px">B(W) vs MT = total − target (MT ${MT_TARGET.toFixed(1)}%) · pp = percentage points</div>`;
   }
-  return `<div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Exception review + KPI impact</div>
-    <div class="body stack">
+  return `<div class="bdetail">
+    <div class="dhead"><h3>${a.name}</h3><div class="sub">${a.geo} · ${a.vertical} · submitted by ${e?.submittedBy||"—"} ${e?.submittedAt||""}</div></div>
+    <div class="dbody">
+      ${!e? `<div class="callout">Repricing account — not in the exception flow.</div>` : `
       <div class="grid3">
-        <div class="field"><label>Account</label><div class="ro">${a.name} · ${a.geo}</div></div>
+        <div class="field"><label>Stage</label><div class="ro">${e.stage}</div></div>
         <div class="field"><label>Requested</label><div class="ro">${esc(e.ask||"—")}</div></div>
-        <div class="field"><label>Submitted by</label><div class="ro">${e.submittedBy||"—"} ${e.submittedAt||""}</div></div>
+        <div class="field"><label>Active</label><div class="ro">${a.active?"Yes":"No"}</div></div>
       </div>
-      <div class="field"><label>PM — account past performance</label><div class="callout">${esc(e.performance||"—")}</div></div>
+      <div class="field"><label>Sale's reason</label><div class="callout">${esc(e.reason||"—")}</div></div>
+      <div class="field"><label>PM — account past performance</label><div class="callout">${esc(e.performance||"(not compiled)")}</div></div>
       <div class="field"><label>Materials</label><div class="matlist">${(e.materials||[]).map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")||`<div class="tiny">none</div>`}</div></div>
-      <div class="card" style="box-shadow:none"><h3>KPI calculator <span class="plat">baseline: ${base.geo} · ${base.vertical}</span></h3>
+      <div class="card" style="box-shadow:none"><h3>KPI impact calculator <span class="plat">baseline: ${base.geo} · ${base.vertical}</span></h3>
         <div class="pad">
           <div class="callout info" style="margin-bottom:10px">Baseline data source · ${base.geo}/${base.vertical}: REV ${m2(base.rev)} · TMCGP ${m2(base.tmcgp)} (${(base.tmcgp/base.rev*100).toFixed(2)}%)</div>
           <table class="kpi-rows"><tr><th>#</th><th>Units</th><th>REV (USD)</th><th>TMCGP%</th><th></th></tr>${rows}</table>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn ghost sm" data-act="calc-add">+ Row</button>
+          <div style="display:flex;gap:8px;margin-top:10px"><button class="btn ghost sm" data-act="calc-add">+ Row</button>
             <button class="btn primary sm" data-act="calc-run" data-id="${a.id}">Calculate</button></div>
           <div style="margin-top:12px">${summary}</div>
         </div></div>
-    </div></div>`;
-}
-
-/* ============================================================ Tracker */
-function vwTrkSale(){
-  const book=S.saleBook;
-  const list=S.accounts.filter(a=>a.mgr===book);
-  const stageLabel=a=>{ if(a.track!=="Exception")return "—"; const st=a.exception?.stage;
-    return st==="PM-intake"?"PM compiling":st==="Director-review"?"At Director/CFO":st==="Approved"?"Approved":st==="Rejected"?"Rejected":"—"; };
-  return `
-  <p class="lede"><b>Layer 2 — Tracker (PowerApps, separate app).</b> The <b>Sync to Tracker</b> window in LBP writes here. This dashboard shows every account in a manager's book: lane, who last updated it, when, and how far an exception has progressed.</p>
-  <div class="statgrid" style="margin-bottom:16px">
-    <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
-    <div class="stat"><div class="v">${list.filter(a=>a.track==="RPG").length}</div><div class="l">On RPG</div></div>
-    <div class="stat"><div class="v">${list.filter(a=>a.track==="Exception").length}</div><div class="l">In exception</div></div>
-    <div class="stat"><div class="v">${list.filter(a=>a.unread.sale).length}</div><div class="l">Unread results</div></div>
-  </div>
-  <div class="card">
-    <h3>Sale dashboard — account book <span class="plat">Main Table</span></h3>
-    <div class="pad">
-      <div class="field" style="max-width:220px;margin-bottom:12px"><label>Sale Manager</label>
-        <select data-input="saleBook">${SALE_MGRS.map(m=>`<option ${m===book?"selected":""}>${m}</option>`).join("")}</select></div>
-      <table class="sheet">
-        <thead><tr><th>Account</th><th>Lane</th><th>Guidance</th><th>Last updated by</th><th>When</th><th>Exception progress</th></tr></thead>
-        <tbody>${list.map(a=>`<tr class="click" data-act="trk-sale-open" data-id="${a.id}">
-          <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread</span>`:""}</td>
-          <td>${a.track==="RPG"?`<span class="pill info">RPG</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill mut">—</span>`}</td>
-          <td class="mono">${a.guidance||"—"}</td>
-          <td class="mono">${a.lastBy||"—"}</td><td class="mono">${a.lastAt||"—"}</td>
-          <td>${stageLabel(a)}</td></tr>`).join("")}</tbody>
-      </table>
-    </div>
-  </div>
-  ${S.sel.saleAcct&&A(S.sel.saleAcct)&&A(S.sel.saleAcct).exception&&A(S.sel.saleAcct).exception.decision? `
-    <div class="card" style="margin-top:16px"><h3>Exception result — ${A(S.sel.saleAcct).name}</h3>
-      <div class="pad"><div class="callout ${A(S.sel.saleAcct).exception.decision==="Approved"?"good":"bad"}"><b>${A(S.sel.saleAcct).exception.decision}.</b> ${esc(A(S.sel.saleAcct).exception.decisionNote)}</div></div></div>`:""}`;
-}
-function boardLegend(){
-  return `<div class="legend">
-    <span><i style="background:var(--yellow)"></i> exception — needs action</span>
-    <span><i style="background:var(--info)"></i> RPG</span>
-    <span><i style="background:var(--good)"></i> approved</span>
-    <span><i style="background:var(--bad)"></i> rejected</span>
-    <span><i style="background:var(--border-strong)"></i> in flight elsewhere</span></div>`;
-}
-function brow(a,c,role){
-  const sel=(role==="pm"?S.sel.trkPM:S.sel.trkDir)===a.id;
-  const unread=role==="pm"?a.unread.pm:false;
-  return `<div class="brow ${c} ${sel?"sel":""}" data-act="trk-board" data-role="${role}" data-id="${a.id}">
-    <span class="stripe"></span>
-    <span><span class="nm">${a.name}${unread?`<span class="unread"></span>`:""}</span>
-      <span class="meta">${a.geo} · ${a.vertical} · ${a.track==="Exception"?(a.exception?.stage||""):a.track}</span></span>
-    <span>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):a.track==="Exception"?`<span class="pill yellow">exc</span>`:`<span class="pill info">RPG</span>`}</span></div>`;
-}
-function vwTrkPM(){
-  const board=sortedBoard("pm");
-  const sel=S.sel.trkPM?A(S.sel.trkPM):(board[0]&&board[0].a);
-  return `
-  <p class="lede"><b>Layer 2 — Tracker · Profit Manager.</b> Monitoring board — the work (compile + submit) happens in LBP → RPT. Colours: <b>yellow</b> exception waiting, <b>blue</b> RPG, <b>green</b> approved, <b>red</b> rejected; yellow sorts first.</p>
-  ${boardLegend()}
-  <div class="board">
-    <div class="blist">${board.map(({a,c})=>brow(a,c,"pm")).join("")||`<div class="callout">Nothing in a lane.</div>`}</div>
-    ${sel?trkDetail(sel,"pm"):`<div class="bdetail"><div class="dbody"><div class="callout">Pick an account.</div></div></div>`}
-  </div>`;
-}
-function vwTrkDir(){
-  const board=sortedBoard("director");
-  const sel=S.sel.trkDir?A(S.sel.trkDir):((board.find(x=>x.c==="yellow")||board[0]||{}).a);
-  return `
-  <p class="lede"><b>Layer 2 — Tracker · Director / CFO.</b> Monitoring board. The KPI calculator and the decision live in LBP → RPT / work list; this is the portfolio view of where every exception stands.</p>
-  ${boardLegend()}
-  <div class="board">
-    <div class="blist">${board.map(({a,c})=>brow(a,c,"director")).join("")||`<div class="callout">Nothing in a lane.</div>`}</div>
-    ${sel?trkDetail(sel,"director"):`<div class="bdetail"><div class="dbody"><div class="callout">Pick an account.</div></div></div>`}
-  </div>`;
-}
-function trkDetail(a,role){
-  const e=a.exception;
-  return `<div class="bdetail">
-    <div class="dhead"><h3>${a.name} ${role==="pm"&&a.unread.pm?`<span class="pill bad">● unread</span>`:""}</h3>
-      <div class="sub">${a.geo} · ${a.vertical} · GAM ${a.gam} · Sale Mgr ${a.mgr} · PM ${PM_OF[a.mgr]}</div></div>
-    <div class="dbody">
-      ${role==="pm"&&a.unread.pm&&e?.decision? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>Director/CFO ${e.decision}.</b> ${esc(e.decisionNote)}
-        <div style="margin-top:8px"><button class="btn ghost sm" data-act="trk-mark-read" data-id="${a.id}">Mark read</button></div></div>`:""}
-      <div class="grid3">
-        <div class="field"><label>Lane</label><div class="ro">${a.track||"—"}</div></div>
-        <div class="field"><label>Active</label><div class="ro">${a.active?"Yes":"No"}</div></div>
-        <div class="field"><label>Guidance</label><div class="ro">${a.guidance||"missing"}</div></div>
-      </div>
-      ${!e? `<div class="callout">RPG account — nothing in the exception flow.</div>` : `
-      <div class="field"><label>Exception stage</label><div class="ro">${e.stage}</div></div>
-      <div class="field"><label>Requested</label><div class="ro">${esc(e.ask||"—")}</div></div>
-      <div class="field"><label>Sale's reason</label><div class="callout">${esc(e.reason||"—")}</div></div>
-      ${e.performance?`<div class="field"><label>PM past performance</label><div class="callout">${esc(e.performance)}</div></div>`:""}
-      ${(e.materials||[]).length?`<div class="field"><label>Materials</label><div class="matlist">${e.materials.map(m=>`<div class="m">📎 ${esc(m)}</div>`).join("")}</div></div>`:""}
-      ${e.calc?`<div class="callout info">KPI snapshot — TMCGP% ${e.calc.totPct.toFixed(2)}% · ${pp(e.calc.bwPct)} vs MT</div>`:""}
-      ${e.decision?`<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>${e.decision}.</b> ${esc(e.decisionNote)}</div>`:`<div class="callout warn">Awaiting ${e.stage==="PM-intake"?"PM to compile & submit (in LBP)":"Director decision (in LBP)"}.</div>`}`}
+      ${e.decision? `<div class="callout ${e.decision==="Approved"?"good":"bad"}"><b>${e.decision}.</b> ${esc(e.decisionNote)}</div>`
+        : yellow? `<div class="toolrow">
+            <button class="btn ok" data-act="dir-decide" data-id="${a.id}" data-kind="approve">Approve exception</button>
+            <button class="btn danger" data-act="dir-decide" data-id="${a.id}" data-kind="reject">Reject exception</button></div>`
+        : `<div class="callout warn">Waiting on the PM to send this exception from their Tracker.</div>`}`}
     </div>
   </div>`;
 }
 
 /* ============================================================ Reporting */
 function vwReport(kind){
-  const F=S.reportFilter;
-  const all=S.accounts;
-  const R=computeReport(all);
-  const geos=["All",...new Set(all.map(a=>a.geo))];
-  const verts=["All",...new Set(all.map(a=>a.vertical))];
+  const F=S.reportFilter, all=S.accounts, R=computeReport(all);
+  const geos=["All",...new Set(all.map(a=>a.geo))], verts=["All",...new Set(all.map(a=>a.vertical))];
   const match=a=>(F.geo==="All"||a.geo===F.geo)&&(F.vertical==="All"||a.vertical===F.vertical);
-  const exc=R.exceptions.filter(match);
-  const miss=R.missing.filter(match);
-
-  const uplTable=`<table class="sheet">
-    <thead><tr><th>Bucket</th><th class="num">Accounts</th><th class="num">% of active</th></tr></thead>
-    <tbody>
-      ${upRow("Full uplift",R.b.full,R.active)}${upRow("Partial uplift",R.b.partial,R.active)}
-      ${upRow("No uplift",R.b.none,R.active)}${upRow("Missing input",R.b.missing,R.active)}
-    </tbody>
+  const exc=R.exceptions.filter(match), miss=R.missing.filter(match);
+  const uplTable=`<table class="sheet"><thead><tr><th>Bucket</th><th class="num">Accounts</th><th class="num">% of active</th></tr></thead>
+    <tbody>${upRow("Full uplift",R.b.full,R.active)}${upRow("Partial uplift",R.b.partial,R.active)}${upRow("No uplift",R.b.none,R.active)}${upRow("Missing input",R.b.missing,R.active)}</tbody>
     <tfoot><tr class="total"><td>Active total</td><td class="num">${R.active}</td><td class="num">100%</td></tr></tfoot></table>`;
-
   const chart=kind==="GA"?decompTree(R):verticalBreakdown();
-
   return `
-  <p class="lede"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the whole book by status.":"The <b>GTP</b> page breaks the same book down by vertical."} The exception &amp; missing-input tables below have their own Geo / Vertical filter.</p>
-
+  <p class="lede"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the whole book by status.":"The <b>GTP</b> page breaks the same book down by vertical."} The exception &amp; missing-input tables have their own Geo / Vertical filter.</p>
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${R.total}</div><div class="l">GA accounts</div></div>
     <div class="stat"><div class="v">${R.active}</div><div class="l">Active</div><div class="s">${pct(R.active,R.total)}</div></div>
@@ -988,17 +965,9 @@ function vwReport(kind){
     <div class="stat"><div class="v">${R.b.missing}</div><div class="l">Missing input</div><div class="s">${pct(R.b.missing,R.active)} of active</div></div>
     <div class="stat"><div class="v">${R.exceptions.length}</div><div class="l">Exceptions</div></div>
   </div>
-
-  <div class="card" style="margin-bottom:16px">
-    <h3>${kind==="GA"?"GA account decomposition":"GTP — accounts by vertical"} <span class="plat">Power BI</span></h3>
-    <div class="pad cols2" style="align-items:start">
-      <div style="overflow-x:auto">${chart}</div>
-      <div>${uplTable}</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Exception &amp; missing-input detail</h3>
+  <div class="card" style="margin-bottom:16px"><h3>${kind==="GA"?"GA account decomposition":"GTP — accounts by vertical"} <span class="plat">Power BI</span></h3>
+    <div class="pad cols2" style="align-items:start"><div style="overflow-x:auto">${chart}</div><div>${uplTable}</div></div></div>
+  <div class="card"><h3>Exception &amp; missing-input detail</h3>
     <div class="pad">
       <div class="filterbar">
         <div class="field"><label>Geo</label><select data-input="fGeo">${geos.map(g=>`<option ${g===F.geo?"selected":""}>${g}</option>`).join("")}</select></div>
@@ -1006,20 +975,15 @@ function vwReport(kind){
         ${(F.geo!=="All"||F.vertical!=="All")?`<button class="btn ghost sm" data-act="rep-clear">Clear</button>`:""}
       </div>
       <div class="cols2">
-        <div>
-          <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Exception accounts · ${exc.length}</div>
+        <div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Exception accounts · ${exc.length}</div>
           <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>Stage</th><th>Decision</th></tr></thead>
             <tbody>${exc.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td>${a.exception?.stage||"—"}</td>
-              <td>${a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill yellow">pending</span>`}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table>
-        </div>
-        <div>
-          <div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
+              <td>${a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill yellow">pending</span>`}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table></div>
+        <div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
           <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
-            <tbody>${miss.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td>${a.mgr}</td><td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table>
-        </div>
+            <tbody>${miss.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td>${a.mgr}</td><td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="4" class="tiny">none</td></tr>`}</tbody></table></div>
       </div>
-    </div>
-  </div>`;
+    </div></div>`;
 }
 function upRow(label,n,base){
   const c={"Full uplift":"var(--good)","Partial uplift":"var(--warn)","No uplift":"var(--bad)","Missing input":"var(--border-strong)"}[label];
@@ -1027,27 +991,25 @@ function upRow(label,n,base){
 }
 function decompTree(R){
   const bar=(v,max,color)=>`<div class="tn-bar"><i style="width:${max?Math.round(v/max*100):0}%;background:${color}"></i></div>`;
-  const maxTop=Math.max(R.active,R.notActive,1), maxB=Math.max(R.b.full,R.b.partial,R.b.none,R.b.missing,1);
+  const mt=Math.max(R.active,R.notActive,1), mb=Math.max(R.b.full,R.b.partial,R.b.none,R.b.missing,1);
   return `<div class="tree">
     <div class="tcol"><div class="tnode root"><div class="tn-l">GA portfolio</div><div class="tn-v">${R.total}</div></div></div>
     <div class="tcol links"><div class="lwrap"><span class="link"></span><span class="link"></span></div></div>
     <div class="tcol">
-      <div class="tnode"><div class="tn-l">Active</div><div class="tn-v">${R.active}</div>${bar(R.active,maxTop,"var(--good)")}</div>
-      <div class="tnode"><div class="tn-l">Not active</div><div class="tn-v">${R.notActive}</div>${bar(R.notActive,maxTop,"var(--muted)")}</div>
-    </div>
+      <div class="tnode"><div class="tn-l">Active</div><div class="tn-v">${R.active}</div>${bar(R.active,mt,"var(--good)")}</div>
+      <div class="tnode"><div class="tn-l">Not active</div><div class="tn-v">${R.notActive}</div>${bar(R.notActive,mt,"var(--muted)")}</div></div>
     <div class="tcol links"><div class="lwrap"><span class="link"></span></div></div>
     <div class="tcol">
-      <div class="tnode"><div class="tn-l">Full uplift</div><div class="tn-v">${R.b.full}</div>${bar(R.b.full,maxB,"var(--good)")}</div>
-      <div class="tnode"><div class="tn-l">Partial uplift</div><div class="tn-v">${R.b.partial}</div>${bar(R.b.partial,maxB,"var(--warn)")}</div>
-      <div class="tnode"><div class="tn-l">No uplift</div><div class="tn-v">${R.b.none}</div>${bar(R.b.none,maxB,"var(--bad)")}</div>
-      <div class="tnode"><div class="tn-l">Missing input</div><div class="tn-v">${R.b.missing}</div>${bar(R.b.missing,maxB,"var(--border-strong)")}</div>
-    </div>
+      <div class="tnode"><div class="tn-l">Full uplift</div><div class="tn-v">${R.b.full}</div>${bar(R.b.full,mb,"var(--good)")}</div>
+      <div class="tnode"><div class="tn-l">Partial uplift</div><div class="tn-v">${R.b.partial}</div>${bar(R.b.partial,mb,"var(--warn)")}</div>
+      <div class="tnode"><div class="tn-l">No uplift</div><div class="tn-v">${R.b.none}</div>${bar(R.b.none,mb,"var(--bad)")}</div>
+      <div class="tnode"><div class="tn-l">Missing input</div><div class="tn-v">${R.b.missing}</div>${bar(R.b.missing,mb,"var(--border-strong)")}</div></div>
   </div>`;
 }
 function verticalBreakdown(){
   const verts=[...new Set(S.accounts.map(a=>a.vertical))];
   return `<div class="treemap">`+verts.map(v=>{
-    const sub=S.accounts.filter(a=>a.vertical===v); const R=computeReport(sub);
+    const sub=S.accounts.filter(a=>a.vertical===v), R=computeReport(sub);
     const seg=(n,color)=>n?`<i style="width:${n/Math.max(R.active,1)*100}%;background:${color}"></i>`:"";
     return `<div class="tm"><h4>${v} <span>${sub.length} acct · ${R.active} active</span></h4>
       <div class="stack">${seg(R.b.full,"var(--good)")}${seg(R.b.partial,"var(--warn)")}${seg(R.b.none,"var(--bad)")}${seg(R.b.missing,"var(--border-strong)")}</div>
@@ -1063,22 +1025,25 @@ function renderOverlay(){
   if(S.overlay==="log"){ o.innerHTML=`<div class="scrim" data-act="close-overlay"><div class="drawer" onclick="event.stopPropagation()">
     <div class="dh">Activity log <span class="tiny" style="font-weight:400">· = writes to Tracker</span><button class="x" data-act="close-overlay">✕</button></div>
     <div class="dc" id="logBody"></div></div></div>`; renderLogDrawer(); return; }
-  const [kind,id]=S.overlay.split(":");
-  if(kind==="sync-rpg") o.innerHTML=syncRpgModal(id);
-  else if(kind==="sync-exc") o.innerHTML=syncExcModal(id);
-  else if(kind==="reject") o.innerHTML=rejectModal(id);
-  else if(kind==="approve") o.innerHTML=approveModal(id);
-  else if(kind==="rec") o.innerHTML=recModal(id);
+  const parts=S.overlay.split(":"), kind=parts[0], arg=parts[1];
+  if(kind==="sync-rpg") o.innerHTML=syncRpgModal(arg);
+  else if(kind==="sync-exc") o.innerHTML=syncExcModal(arg);
+  else if(kind==="act") o.innerHTML=actModal(parts[1],parts[2]);
+  else if(kind==="dir") o.innerHTML=dirDecideModal(parts[1],parts[2]);
+  else if(kind==="rec") o.innerHTML=recModal(arg);
+  else if(kind==="add") o.innerHTML=addModal(arg);
 }
-function approveModal(bidId){
-  const b=B(bidId), a=bidAcct(b);
+function dirDecideModal(kind,accId){
+  const a=A(accId), e=a.exception;
+  const kpi = e.calc ? e.calc : (S.calc.out&&S.calc.acctId===accId ? {totPct:S.calc.out.totPct,bwPct:S.calc.out.bwPct} : null);
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
-    <div class="mh"><h3>Approve exception — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mh"><h3>${kind==="approve"?"Approve":"Reject"} exception — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout info">On approve, the result syncs to the Tracker and PM + Sale get an unread notification.</div>
-      <div class="field"><label>Decision note (flows back to PM + Sale)</label>
-        <textarea data-input="dirNote">${esc(S._dirNote)}</textarea></div>
-      <button class="btn ok" data-act="lbp-approve-confirm" data-id="${bidId}">Confirm approval</button>
+      <div class="callout ${kind==="approve"?"good":"bad"}">On ${kind}, the result syncs to the Tracker and PM + Sale get an unread notification.</div>
+      ${kpi?`<div class="callout info">KPI: TMCGP% ${kpi.totPct.toFixed(2)}% · ${pp(kpi.bwPct)} vs MT</div>`:`<div class="callout warn">Tip: run the KPI calculator first.</div>`}
+      <div class="field"><label>Decision note (flows to PM + Sale)</label>
+        <textarea data-input="actNote">${esc(S._actNote)}</textarea></div>
+      <button class="btn ${kind==="approve"?"ok":"danger"}" data-act="dir-confirm" data-id="${accId}" data-kind="${kind}">Confirm ${kind}</button>
     </div></div></div>`;
 }
 function renderLogDrawer(){ const b=$("#logBody"); if(!b)return;
@@ -1089,7 +1054,7 @@ function syncRpgModal(bidId){
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>Sync to Tracker — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout info">Pricing is confirmed with the customer. This window (a small LBP plug-in) writes the RPG record to the Tracker. If the plug-in can't be built, the same form opens in the Tracker app directly.</div>
+      <div class="callout info">Pricing confirmed with the customer. This small LBP plug-in writes the Repricing record to the Tracker. If the plug-in can't be built, the same form opens in the Tracker app directly.</div>
       <div class="grid2">
         <div class="field"><label>Q1 · Active account?</label><select data-input="q_active"><option>Yes</option><option>No</option></select></div>
         <div class="field"><label>Q2 · Followed full guidance?</label><select data-input="q_guidance"><option>Full</option><option>Partial</option><option>None</option></select></div>
@@ -1106,33 +1071,48 @@ function syncExcModal(bidId){
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>Sync to Tracker — Exception</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="callout warn">You tagged this bid <b>Exception</b> in the Description. This window opens right away and syncs the account to the Tracker as an exception — no email hand-off; the Profit Manager picks it up from their LBP work list.</div>
+      <div class="callout warn">Bid Type is <b>Exception</b>. This window syncs the account to the Tracker as an exception right away — the Profit Manager picks it up from their LBP work list and writes the case on the Tracker.</div>
       <div class="field"><label>Account</label><div class="ro">${a.name} · ${a.geo} · ${a.vertical}</div></div>
-      <div class="field"><label>Reason for exception</label>
-        <textarea data-input="excReason" placeholder="customer situation, competitive pressure…">${esc(S._excReason||"")}</textarea></div>
-      <div class="field"><label>Requested vs guided price</label>
-        <input data-input="excAsk" placeholder="e.g. 6% uplift vs 10% guided" value="${esc(S._excAsk||"")}"></div>
+      <div class="field"><label>Reason for exception</label><textarea data-input="excReason" placeholder="customer situation, competitive pressure…">${esc(S._excReason||"")}</textarea></div>
+      <div class="field"><label>Requested vs guided price</label><input data-input="excAsk" placeholder="e.g. 6% uplift vs 10% guided" value="${esc(S._excAsk||"")}"></div>
       <button class="btn primary" data-act="sync-exc-submit" data-id="${bidId}">Sync exception to Tracker</button>
     </div></div></div>`;
 }
-function rejectModal(bidId){
+function actModal(kind,bidId){
   const b=B(bidId), a=bidAcct(b);
+  const title={approve:"Approve",reject:"Reject",reassign:"Reassign"}[kind];
+  const targets=b.type==="RPG"?["Profit Mgr","Director / CFO"]:(S.role.lbp==="pm"?["Director / CFO"]:["Profit Mgr"]);
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
-    <div class="mh"><h3>Reject — ${a.name} · ${b.id}</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mh"><h3>${title} — ${a.name} · ${b.id}</h3><button class="x" data-act="close-overlay">✕</button></div>
     <div class="mb">
-      <div class="field"><label>Reason (goes back to Sale)</label>
-        <textarea data-input="rejReason">${esc(b.rejectReason||(b.type==="Exception"?"Impact exceeds the MT threshold; renegotiate volume commitment.":"Can't hold the guided price on this configuration — revise the PN mix or volume and resubmit."))}</textarea></div>
-      <button class="btn danger" data-act="lbp-reject-confirm" data-id="${bidId}">Confirm rejection</button>
+      <div class="callout ${kind==="approve"?"good":kind==="reject"?"bad":"info"}">${kind==="reassign"?"Reassigning moves the bid to another role's work list.":"Your comment is saved on the bid and shown to Sale as pricer feedback."}</div>
+      ${kind==="reassign"? `<div class="field"><label>Reassign to</label><select data-input="reassignTo">${targets.map(t=>`<option>${t}</option>`).join("")}</select></div>`:""}
+      <div class="field"><label>Comment${kind==="reassign"?" (optional)":""}</label><textarea data-input="actNote" placeholder="${kind==="approve"?"e.g. within band, ref bid, good to sign":kind==="reject"?"e.g. can't hold guided price, revise PN mix":"e.g. internal price reworked, handing over"}">${esc(S._actNote||"")}</textarea></div>
+      <button class="btn ${kind==="approve"?"ok":kind==="reject"?"danger":"primary"}" data-act="act-confirm" data-id="${bidId}" data-kind="${kind}">Confirm ${title.toLowerCase()}</button>
     </div></div></div>`;
 }
 function recModal(recId){
-  const r=S.rptRecords.find(x=>x.id===recId); if(!r) return "";
+  const r=S.rptRecords.find(x=>x.id===recId); if(!r)return "";
   return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
     <div class="mh"><h3>${r.id} — ${r.account}</h3><button class="x" data-act="close-overlay">✕</button></div>
-    <div class="mb">
-      <div class="tiny mono">${r.bidId} · ${r.kind} · saved by ${r.savedBy} · ${r.ts}</div>
+    <div class="mb"><div class="tiny mono">${r.bidId} · saved by ${r.savedBy} · ${r.role} · ${r.ts}</div>
       <div class="notebox">${esc(r.note)}</div>
-      <button class="btn ghost" data-act="rec-copy" data-id="${r.id}">⧉ Copy note</button>
+      <button class="btn ghost" data-act="rec-copy" data-id="${r.id}">⧉ Copy note</button></div></div></div>`;
+}
+function addModal(who){
+  const book=S.saleBook;
+  const opts=S.accounts.map(a=>`<option value="${a.id}">${a.name} · ${a.geo} · ${a.vertical}${a.track?" — already in "+typeLabel(a.track==="RPG"?"RPG":"Exception"):""}</option>`).join("");
+  return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Add new — manual entry</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mb">
+      <div class="callout info">For a bid that didn't sync from LBP. The account must be one that already exists on the Main Table.</div>
+      <div class="field"><label>Account (from Main Table)</label><select data-input="addAcct">${opts}</select></div>
+      <div class="grid2">
+        <div class="field"><label>Bid Type</label><select data-input="addType"><option>Repricing</option><option>Exception</option></select></div>
+        <div class="field"><label>Bid Request Type</label><select data-input="addReq"><option>Renewal</option><option>New Business</option></select></div>
+      </div>
+      <div class="field"><label>Description</label><textarea data-input="addDesc" placeholder="what this bid is">${esc(S._addDesc||"")}</textarea></div>
+      <button class="btn primary" data-act="add-submit" data-who="${who}">Add to Tracker</button>
     </div></div></div>`;
 }
 
@@ -1141,7 +1121,7 @@ function bind(){
   $$("[data-input]").forEach(node=>{
     const key=node.dataset.input;
     node.onchange=()=>inputChange(key,node.value,node);
-    if(node.tagName==="TEXTAREA"||node.type==="text"||node.tagName==="INPUT") node.oninput=()=>inputChange(key,node.value,node,true);
+    if(node.tagName==="TEXTAREA"||node.tagName==="INPUT") node.oninput=()=>inputChange(key,node.value,node,true);
   });
   $$("[data-linebid]").forEach(inp=>{
     inp.oninput=()=>{ const b=B(inp.dataset.linebid); if(!b)return;
@@ -1155,14 +1135,15 @@ function bind(){
     };
   });
   $$("[data-crow]").forEach(inp=>{ inp.oninput=()=>{ S.calc.rows[+inp.dataset.i][inp.dataset.crow]=inp.value.replace(/[^0-9.]/g,""); }; });
-  $$("[data-act]").forEach(n=>{ n.onclick=e=>{ (ACT[n.dataset.act]||(()=>{}))(n.dataset,e,n); }; });
-  $$("[data-tab]").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; S.rpt.open=null; render(); });
-  $$("[data-role]").forEach(b=>{ if(b.dataset.act)return; b.onclick=()=>{ S.role[S.tab]=b.dataset.role; S.rpt.open=null; render(); }; });
+  $$("[data-act]").forEach(n=>{ n.onclick=e=>{ e.stopPropagation(); (ACT[n.dataset.act]||(()=>{}))(n.dataset,e,n); }; });
+  $$("[data-tab]").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; S.sel.lbpBid=null; S.lbpTool=null; render(); });
+  $$("[data-role]").forEach(b=>{ if(b.dataset.act)return; b.onclick=()=>{ S.role[S.tab]=b.dataset.role; S.sel.lbpBid=null; S.lbpTool=null; render(); }; });
 }
 function inputChange(key,val,node,silent){
   switch(key){
     case "saleBook": S.saleBook=val; S.sel.saleAcct=null; render(); break;
-    case "saleAcct": S.sel.saleAcct=val; break;
+    case "saleAcct": S.sel.saleAcct=val; render(); break;
+    case "brBidType": S._brBidType=val; break;
     case "brType": S._brType=val; break;
     case "brFul": S._brFul=val; break;
     case "brDesc": S._brDesc=val; break;
@@ -1172,11 +1153,16 @@ function inputChange(key,val,node,silent){
     case "q_guidance": S._qGuid=val; break;
     case "q_eff": S._qEff=val; break;
     case "q_lnl": S._qLnl=val; break;
+    case "actNote": S._actNote=val; break;
+    case "reassignTo": S._reassignTo=val; break;
+    case "freeCmt": S._freeCmt=val; break;
     case "pricerNote": { const b=B(node.dataset.id); if(b){ b.pricerNote=val; const nb=document.getElementById("rpt-note"); if(nb)nb.textContent=pricingNote(b);} break; }
-    case "perf": { const a=A(node.dataset.id); if(a&&a.exception){ a.exception.performance=val; const nb=document.getElementById("rpt-note"); if(nb)nb.textContent=excCaseNote(a);} break; }
-    case "rejReason": { const b=B(node.dataset.id); if(b)b.rejectReason=val; break; }
-    case "dirNote": S._dirNote=val; break;
+    case "perf": { const a=A(node.dataset.id); if(a&&a.exception) a.exception.performance=val; break; }
     case "recSearch": S.sel.recSearch=val; if(!silent) render(); break;
+    case "addAcct": S._addAcct=val; break;
+    case "addType": S._addType=val; break;
+    case "addReq": S._addReq=val; break;
+    case "addDesc": S._addDesc=val; break;
     case "fGeo": S.reportFilter.geo=val; render(); break;
     case "fVert": S.reportFilter.vertical=val; render(); break;
   }
@@ -1188,168 +1174,187 @@ const ACT={
   "close-overlay"(){ S.overlay=null; render(); },
   "reset-all"(){ S=freshState(); render(); toast("Demo reset."); },
 
-  /* --- LBP · Sale --- */
+  /* LBP nav */
+  "lbp-open"(d){ S.sel.lbpBid=d.id; S.lbpTool=null; render(); },
+  "lbp-back"(){ S.sel.lbpBid=null; S.lbpTool=null; render(); },
+  "tool-open"(d){ if(!canRPT(S.role.lbp)){ toast("RPT / LPS are Pricer / PM / Director only."); return; } S.lbpTool=d.tool; render(); },
+  "tool-close"(){ S.lbpTool=null; render(); },
+
+  /* LBP · Sale submit */
   "lbp-submit"(){
     const a=A(S.sel.saleAcct)||S.accounts.find(x=>x.mgr===S.saleBook);
-    const desc=(S._brDesc||"").trim()||"RPG renewal";
-    const isExc=/exception/i.test(desc);
-    const b=mkBid({id:nextBid(),accountId:a.id,type:isExc?"Exception":"RPG",description:desc,submittedBy:a.sp.split("@")[0],
+    const isExc=(S._brBidType||"Repricing")==="Exception";
+    const b=mkBid({id:nextBid(),accountId:a.id,type:isExc?"Exception":"RPG",description:(S._brDesc||"").trim(),
+      bidReqType:S._brType||"Renewal",fulfillment:S._brFul||"Direct",submittedBy:a.sp.split("@")[0],
       lbpStatus:isExc?"with-pm":"with-pricer",lineIdx:[0,1,2]});
     S.bids.unshift(b); S._brDesc="";
     if(isExc){
       a.track="Exception";
-      a.exception={stage:"PM-intake", reason:"", ask:"", performance:"", materials:[],
-        submittedBy:null, submittedAt:null, decision:null, decisionNote:"", calc:null};
+      a.exception={stage:"PM-intake",reason:"",ask:"",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false};
       a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
-      log(`Sale submitted <b>${a.name}</b> in LBP — Description tagged <b>Exception</b> (${b.id}).`, true);
+      log(`Sale submitted <b>${a.name}</b> in LBP — Bid Type <b>Exception</b> (${b.id}).`, true);
       S.overlay="sync-exc:"+b.id; renderOverlay(); bind();
     } else {
-      log(`Sale submitted <b>${a.name}</b> in LBP — <b>RPG</b> (${b.id}) → Pricer work list.`, true);
-      toast(`${a.name} · RPG → Pricer.`); render();
+      log(`Sale submitted <b>${a.name}</b> in LBP — <b>Repricing</b> (${b.id}) → Pricer.`, true);
+      toast(`${a.name} · Repricing → Pricer.`); render();
     }
   },
   "sync-exc-submit"(d){
     const b=B(d.id), a=bidAcct(b);
-    a.track="Exception";
-    a.exception={stage:"PM-intake", reason:S._excReason||"", ask:S._excAsk||"",
-      performance:"", materials:[], submittedBy:null, submittedAt:null, decision:null, decisionNote:"", calc:null};
+    a.exception.reason=S._excReason||""; a.exception.ask=S._excAsk||"";
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
     S._excReason=""; S._excAsk=""; S.overlay=null;
-    log(`Sync to Tracker — <b>${a.name}</b> written as an exception. Profit Manager ${PM_OF[a.mgr]} picks it up in LBP.`, true);
-    toast(`${a.name} synced to Tracker as Exception.`);
+    log(`Sync to Tracker — <b>${a.name}</b> written as an exception. PM ${PM_OF[a.mgr]} picks it up in LBP.`, true);
+    toast(`${a.name} synced to Tracker (Exception).`);
     render();
   },
-  "sale-confirm-open"(d){
-    const b=B(d.id);
-    if(b.type==="Exception"){ S.overlay="sync-exc:"+b.id; }
-    else { S.overlay="sync-rpg:"+b.id; }
-    renderOverlay(); bind();
-  },
+  "sale-confirm-open"(d){ S.overlay="sync-rpg:"+d.id; renderOverlay(); bind(); },
   "sync-rpg-submit"(d){
     const b=B(d.id), a=bidAcct(b);
     a.track="RPG"; a.active=(S._qActive||"Yes")==="Yes"; a.guidance=S._qGuid||"Full";
     a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
-    b.lbpStatus="closed"; S.overlay=null;
-    log(`Sync to Tracker — <b>${a.name}</b> RPG confirmed: ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}.`, true);
-    toast(`${a.name} synced to Tracker (RPG).`);
-    render();
-  },
-  "sale-open-result"(d){
-    const b=B(d.id), a=bidAcct(b);
-    if(a.unread.sale){ a.unread.sale=false; log(`Sale read the decision on <b>${a.name}</b>.`); }
-    S.sel.saleAcct=a.id; S.tab="tracker"; S.role.tracker="sale";
+    b.lbpStatus="closed"; S.overlay=null; S.sel.lbpBid=null;
+    log(`Sync to Tracker — <b>${a.name}</b> Repricing confirmed: ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}.`, true);
+    toast(`${a.name} synced to Tracker (Repricing).`);
     render();
   },
 
-  /* --- RPT --- */
-  "rpt-open"(d){
-    if(!canRPT(d.role)){ toast("RPT is Pricer / PM / Director only."); return; }
-    S.rpt={open:d.id, role:d.role, ran:!!rptRecord(d.id,d.role)};
-    if(d.role==="director"){ const a=bidAcct(B(d.id)); S.calc={rows:[{u:120,rev:163680,t:8.5}],out:null,acctId:a.id}; }
-    render();
-  },
-  "rpt-close"(){ S.rpt={open:null,role:null,ran:false}; render(); },
-  "rpt-run"(){ S.rpt.ran=true;
-    const b=B(S.rpt.open);
-    log(`RPT run · ${S.rpt.role} · <b>${bidAcct(b).name}</b> (${b.id}).`);
-    render(); },
+  /* RPT */
+  "rpt-run"(d){ const b=B(d.id); b.rptRan=true;
+    log(`RPT run · ${S.role.lbp} · <b>${bidAcct(b).name}</b> (${b.id}).`); render(); },
   "rpt-lps"(d){ const b=B(d.id); b.lpsSynced=true;
-    log(`RPT → Sync to LPS · <b>${bidAcct(b).name}</b> (${b.id}) — pending integration / write permissions.`);
+    log(`RPT → Sync to LPS · <b>${bidAcct(b).name}</b> (${b.id}) — pending write permissions.`);
     toast("Queued to LPS."); render(); },
-  "rpt-copy"(d){
-    const b=B(d.id), a=bidAcct(b), role=S.rpt.role;
-    const text=role==="pricer"?pricingNote(b):role==="pm"?excCaseNote(a):kpiNote(a);
-    copyText(text); toast("Pricing note copied to clipboard.");
-  },
+  "rpt-copy"(d){ const b=B(d.id); copyText(pricingNote(b)); toast("Pricing note copied to clipboard."); },
   "rpt-save"(d){
-    const b=B(d.id), a=bidAcct(b), role=S.rpt.role;
-    const kind=role==="pricer"?"pricing":role==="pm"?"exception-case":"kpi-impact";
-    const note=role==="pricer"?pricingNote(b):role==="pm"?excCaseNote(a):kpiNote(a);
+    const b=B(d.id), a=bidAcct(b), role=S.role.lbp;
+    const note=pricingNote(b);
     const savedBy=role==="pricer"?PRICER:role==="pm"?PM_OF[a.mgr]:DIRECTOR;
     let rec=rptRecord(d.id,role);
     if(rec){ rec.note=note; rec.ts=todayStamp(); toast("Record updated."); }
-    else { rec={id:nextRpt(),bidId:d.id,account:a.name,kind,role,savedBy,ts:todayStamp(),note};
-      S.rptRecords.unshift(rec); toast(`Saved as ${rec.id}.`); }
-    if(role==="director"&&S.calc.out&&S.calc.acctId===a.id) a.exception.calc={totPct:S.calc.out.totPct,bwPct:S.calc.out.bwPct};
-    log(`RPT record ${rec.id} saved · ${role} · <b>${a.name}</b>. LBP decision unlocked.`, true);
+    else { rec={id:nextRpt(),bidId:d.id,account:a.name,role,savedBy,ts:todayStamp(),note}; S.rptRecords.unshift(rec); toast(`Saved as ${rec.id}.`); }
+    log(`RPT record ${rec.id} saved · ${role} · <b>${a.name}</b>.`, true);
     render();
   },
-  "pm-attach"(d){ const a=A(d.id);
-    if(a&&a.exception&&!a.exception.materials.includes("tmcgp_bridge_fy26.xlsx")) a.exception.materials.push("tmcgp_bridge_fy26.xlsx");
-    const nb=document.getElementById("rpt-note"); if(nb)nb.textContent=excCaseNote(a);
-    render(); },
-  "calc-add"(){ S.calc.rows.push({u:0,rev:0,t:0}); render(); },
-  "calc-del"(d){ S.calc.rows.splice(+d.i,1); if(!S.calc.rows.length)S.calc.rows.push({u:0,rev:0,t:0}); render(); },
-  "calc-run"(d){ const out=runCalc(d.id);
-    log(`RPT KPI calc · <b>${A(d.id).name}</b> — TMCGP% ${out.totPct.toFixed(2)}%, ${pp(out.bwPct)} vs MT.`);
-    render(); },
 
-  /* --- LBP decisions --- */
-  "lbp-approve"(d){
-    const b=B(d.id), a=bidAcct(b);
-    if(b.type==="RPG"){
-      b.lbpStatus="sale-confirm"; b.decision="Approved"; b.decisionBy=PRICER;
-      log(`Pricer <b>approved</b> ${b.id} (${a.name}) in LBP — blended ${bidMargin(b)!=null?bidMargin(b)+"%":"—"}. → Sale to confirm.`, true);
-      toast(`${a.name} approved — Sale to confirm.`);
-      render();
+  /* LBP decisions / comments */
+  "lbp-act"(d){ S._actNote=""; S._reassignTo=""; S.overlay="act:"+d.kind+":"+d.id; renderOverlay(); bind(); },
+  "act-confirm"(d){
+    const b=B(d.id), a=bidAcct(b), role=S.role.lbp, kind=d.kind;
+    const by=role==="pricer"?PRICER:role==="pm"?PM_OF[a.mgr]:DIRECTOR;
+    const text=S._actNote||"";
+    if(kind==="approve"){
+      b.decision="Approved"; b.decisionBy=by; b.lbpStatus="sale-confirm";
+      addComment(b,"approve",role,by,text||"Approved.");
+      log(`${role==="pricer"?"Pricer":"Director"} <b>approved</b> ${b.id} (${a.name}) in LBP. → Sale to confirm.`, true);
+      toast(`${a.name} approved.`);
+    } else if(kind==="reject"){
+      b.decision="Rejected"; b.decisionBy=by; b.lbpStatus="closed";
+      addComment(b,"reject",role,by,text||"Rejected.");
+      a.unread.sale=true;
+      log(`${role} <b>rejected</b> ${b.id} (${a.name}) in LBP — ${esc(text||"no reason given")}. Back to Sale.`, true);
+      toast(`${a.name} rejected.`);
     } else {
-      S._dirNote="Approved. "+(a.exception.ask||"the request")+" is acceptable given account history; TMCGP% impact within MT tolerance.";
-      S.overlay="approve:"+d.id; renderOverlay(); bind();
+      const to=S._reassignTo||"Director / CFO";
+      const target=/Director/.test(to)?"director":"pm";
+      b.lbpStatus="with-"+target;
+      if(target==="director"&&a.exception&&a.exception.stage==="PM-intake") a.exception.stage="Director-review", a.exception.submittedBy=PM_OF[a.mgr], a.exception.submittedAt=todayStamp();
+      if(target==="pm"&&a.exception) a.exception.stage="PM-intake";
+      addComment(b,"reassign",role,by,(text||"Reassigned.")+" → "+to);
+      log(`${role} <b>reassigned</b> ${b.id} (${a.name}) → ${to}.`, true);
+      toast(`${a.name} reassigned to ${to}.`);
     }
+    S.overlay=null; S._actNote=""; render();
   },
-  "lbp-approve-confirm"(d){
-    const b=B(d.id), a=bidAcct(b);
-    b.lbpStatus="closed"; b.decision="Approved"; b.decisionBy=DIRECTOR;
-    a.exception.stage="Approved"; a.exception.decision="Approved";
-    a.exception.decisionNote=S._dirNote||"Approved as requested for the tranche in scope.";
-    a.unread.sale=true; a.unread.pm=true;
-    if(!a.guidance) a.guidance="Partial";
-    S.overlay=null; S._dirNote="";
-    log(`Director/CFO <b>approved</b> the ${a.name} exception (${b.id}) in LBP. Synced to Tracker; PM + Sale notified.`, true);
-    toast(`${a.name} exception approved.`);
-    render();
-  },
-  "lbp-reject-open"(d){
-    const b=B(d.id);
-    if(!b.rejectReason) b.rejectReason = b.type==="Exception"
-      ? "Impact exceeds the MT threshold; renegotiate volume commitment instead."
-      : "Can't hold the guided price on this configuration — revise the PN mix or volume and resubmit.";
-    S.overlay="reject:"+d.id; renderOverlay(); bind();
-  },
-  "lbp-reject-confirm"(d){
-    const b=B(d.id), a=bidAcct(b);
-    b.decision="Rejected"; b.lbpStatus="closed";
-    if(b.type==="RPG"){ b.decisionBy=PRICER;
-      log(`Pricer <b>rejected</b> ${b.id} (${a.name}) — ${esc(b.rejectReason)}. Back to Sale.`, true); }
-    else { b.decisionBy=DIRECTOR;
-      a.exception.stage="Rejected"; a.exception.decision="Rejected"; a.exception.decisionNote=b.rejectReason;
-      a.unread.sale=true; a.unread.pm=true;
-      log(`Director/CFO <b>rejected</b> the ${a.name} exception (${b.id}) — ${esc(b.rejectReason)}. Synced to Tracker.`, true); }
-    S.overlay=null; toast(`${a.name} rejected.`); render();
-  },
-  "lbp-pm-submit"(d){
-    const b=B(d.id), a=bidAcct(b), e=a.exception;
-    e.stage="Director-review"; e.submittedBy=PM_OF[a.mgr]; e.submittedAt=todayStamp();
-    if(!e.materials.length) e.materials.push("tmcgp_bridge_fy26.xlsx");
-    b.lbpStatus="with-director";
-    log(`Profit Manager ${e.submittedBy} submitted the <b>${a.name}</b> exception to Director/CFO (${b.id}).`, true);
-    toast(`${a.name} → Director/CFO.`);
-    render();
+  "lbp-comment"(d){
+    const b=B(d.id), a=bidAcct(b), role=S.role.lbp;
+    const by=role==="pricer"?PRICER:role==="pm"?PM_OF[a.mgr]:DIRECTOR;
+    if(!(S._freeCmt||"").trim()){ toast("Write something first."); return; }
+    addComment(b,"note",role,by,S._freeCmt.trim());
+    if(role!=="sale") a.unread.sale=true;
+    log(`${by} commented on ${b.id} (${a.name}).`, true);
+    S._freeCmt=""; toast("Comment posted."); render();
   },
 
-  /* --- RPT records --- */
+  /* RPT records */
   "rec-view"(d){ S.overlay="rec:"+d.id; renderOverlay(); bind(); },
   "rec-copy"(d){ const r=S.rptRecords.find(x=>x.id===d.id); if(r){ copyText(r.note); toast("Note copied."); } },
 
-  /* --- Tracker --- */
-  "trk-sale-open"(d){ const a=A(d.id); if(a.unread.sale){ a.unread.sale=false; log(`Sale read the result on <b>${a.name}</b>.`); } S.sel.saleAcct=d.id; render(); },
-  "trk-board"(d){ if(d.role==="pm"){ S.sel.trkPM=d.id; } else { S.sel.trkDir=d.id; } render(); },
+  /* Tracker · PM */
+  "trk-board"(d){ if(d.role==="pm") S.sel.trkPM=d.id; else S.sel.trkDir=d.id; render(); },
   "trk-mark-read"(d){ const a=A(d.id); a.unread.pm=false; log(`PM read the decision on <b>${a.name}</b>.`); render(); },
+  "pm-flag"(d){ const a=A(d.id); a.track="Exception";
+    a.exception={stage:"PM-intake",reason:"(flagged by PM)",ask:"",performance:"",materials:[],submittedBy:PM_OF[a.mgr],submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false};
+    log(`PM ${PM_OF[a.mgr]} flagged <b>${a.name}</b> as an Exception.`, true); render(); },
+  "pm-attach"(d){ const a=A(d.id); if(a.exception&&!a.exception.materials.includes("tmcgp_bridge_fy26.xlsx")) a.exception.materials.push("tmcgp_bridge_fy26.xlsx"); render(); },
+  "pm-save"(d){ const a=A(d.id); a.exception.draftSaved=true;
+    log(`PM saved the <b>${a.name}</b> exception draft on the Tracker.`, true); toast("Draft saved."); render(); },
+  "pm-send"(d){ const a=A(d.id), e=a.exception;
+    if(!(e.performance||"").trim()){ toast("Add the account's past performance first."); return; }
+    e.stage="Director-review"; e.submittedBy=PM_OF[a.mgr]; e.submittedAt=todayStamp(); e.draftSaved=true;
+    if(!e.materials.length) e.materials.push("tmcgp_bridge_fy26.xlsx");
+    const b=S.bids.find(x=>x.accountId===a.id&&x.type==="Exception"); if(b) b.lbpStatus="with-director";
+    log(`PM ${e.submittedBy} <b>sent</b> the <b>${a.name}</b> exception to Director/CFO (Tracker).`, true);
+    toast(`${a.name} → Director/CFO.`); render(); },
+  "pm-reject"(d){ const a=A(d.id), e=a.exception;
+    e.stage="Rejected"; e.decision="Rejected"; e.decisionNote="Returned by PM — insufficient justification to escalate.";
+    a.unread.sale=true;
+    const b=S.bids.find(x=>x.accountId===a.id&&x.type==="Exception"); if(b){ b.lbpStatus="closed"; b.decision="Rejected"; addComment(b,"reject","pm",PM_OF[a.mgr],e.decisionNote); }
+    log(`PM ${PM_OF[a.mgr]} <b>rejected</b> the <b>${a.name}</b> exception back to Sale.`, true);
+    toast(`${a.name} exception returned to Sale.`); render(); },
 
-  /* --- reporting --- */
-  "rep-clear"(){ S.reportFilter={geo:"All",vertical:"All"}; render(); }
+  /* Tracker · Director */
+  "calc-add"(){ S.calc.rows.push({u:0,rev:0,t:0}); render(); },
+  "calc-del"(d){ S.calc.rows.splice(+d.i,1); if(!S.calc.rows.length)S.calc.rows.push({u:0,rev:0,t:0}); render(); },
+  "calc-run"(d){ const out=runCalc(d.id); log(`Tracker KPI calc · <b>${A(d.id).name}</b> — TMCGP% ${out.totPct.toFixed(2)}%, ${pp(out.bwPct)} vs MT.`); render(); },
+  "dir-decide"(d){
+    const a=A(d.id);
+    S._actNote = d.kind==="approve"
+      ? "Approved. "+(a.exception.ask||"the request")+" is acceptable given account history; TMCGP% impact within MT tolerance."
+      : "Rejected. Impact exceeds MT tolerance; renegotiate volume commitment.";
+    S.overlay="dir:"+d.kind+":"+d.id; renderOverlay(); bind();
+  }
 };
+
+ACT["dir-confirm"]=function(d){
+  const a=A(d.id), e=a.exception, kind=d.kind;
+  const note=S._actNote||(kind==="approve"?"Approved.":"Rejected.");
+  e.decision=kind==="approve"?"Approved":"Rejected";
+  e.stage=e.decision; e.decisionNote=note;
+  if(S.calc.out&&S.calc.acctId===a.id) e.calc={totPct:S.calc.out.totPct,bwPct:S.calc.out.bwPct};
+  a.unread.sale=true; a.unread.pm=true;
+  if(kind==="approve"&&!a.guidance) a.guidance="Partial";
+  const b=S.bids.find(x=>x.accountId===a.id&&x.type==="Exception");
+  if(b){ b.lbpStatus="closed"; b.decision=e.decision; addComment(b,kind==="approve"?"approve":"reject","director",DIRECTOR,note); }
+  S.overlay=null; S._actNote="";
+  log(`Director/CFO <b>${e.decision}</b> the <b>${a.name}</b> exception on the Tracker. Synced; PM + Sale notified.`, true);
+  toast(`${a.name} exception ${e.decision.toLowerCase()}.`);
+  render();
+};
+
+/* Tracker · add new */
+ACT["add-open"]=function(d){ S._addAcct=S.accounts[0].id; S._addType="Repricing"; S._addReq="Renewal"; S._addDesc="";
+  S.overlay="add:"+d.who; renderOverlay(); bind(); };
+ACT["add-submit"]=function(d){
+  const a=A(S._addAcct)||S.accounts[0];
+  const isExc=(S._addType||"Repricing")==="Exception";
+  const b=mkBid({id:nextBid(),accountId:a.id,type:isExc?"Exception":"RPG",description:(S._addDesc||"manual entry"),
+    bidReqType:S._addReq||"Renewal",submittedBy:d.who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0],manual:true,
+    lbpStatus:isExc?"with-pm":"with-pricer"});
+  S.bids.unshift(b);
+  if(isExc && !a.exception){
+    a.track="Exception";
+    a.exception={stage:"PM-intake",reason:(S._addDesc||"manual entry"),ask:"",performance:"",materials:[],submittedBy:d.who==="pm"?PM_OF[a.mgr]:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false};
+  }
+  a.lastBy=(d.who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0]); a.lastAt=todayStamp();
+  S.overlay=null;
+  log(`Manual entry added on the Tracker — <b>${a.name}</b> · ${typeLabel(b.type)} (${b.id}).`, true);
+  toast(`${a.name} added manually.`);
+  render();
+};
+ACT["trk-sale-open"]=function(d){ const a=A(d.id); if(a.unread.sale){ a.unread.sale=false; log(`Sale read the result on <b>${a.name}</b>.`); } S.sel.saleAcct=d.id; render(); };
+ACT["rep-clear"]=function(){ S.reportFilter={geo:"All",vertical:"All"}; render(); };
 
 render();
 </script>

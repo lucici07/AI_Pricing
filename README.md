@@ -4,8 +4,8 @@
 
 | Tab | 内容 | 角色 |
 |---|---|---|
-| **1 · LBP · RPT** | Sale 在 LBP 提交 bid，Description 里写 `RPG` / `Exception`。Pricer / PM / Director 从 work list 领 bid，打开 **RPT**（嵌在 LBP 里的算价工具）：Run → 看结果 → Sync to LPS → 一键 copy pricing note → Save record。**RPT 不做审批**，approve / reject 是 LBP work list 上的动作，且要先存了 RPT record 才解锁。 | Sale · Pricer · Profit Mgr · Director/CFO · RPT records |
-| **2 · Tracker**（PowerApps，独立 app） | LBP 里的 **Sync to Tracker** 小窗口写进这里。Sale 看板（lane / 谁更新 / 何时 / exception 进度）；PM、Director 的颜色看板（黄=待处理、蓝=RPG、绿=已批、红=拒绝，黄色排最前）——监控用，动作在 LBP。 | Sale · Profit Mgr · Director/CFO |
+| **1 · LBP · RPT** | Sale 在 LBP 提交 bid，**Bid Type = Repricing / Exception**，Fulfillment = Direct / Indirect。Pricer / PM / Director 点开单个 bid → bid 详情页里有 **RPT** 和 **LPS** 两个工具按钮（不在列表页）。RPT 三个角色长一样：Run → 结果 → Sync to LPS → copy pricing note → Save record（**不做审批**）。**Repricing 的 approve / reject 在 LBP 详情页**，点完弹一个留 comment 的框（Sale 能看到这段 pricer feedback）；不需要先开 RPT。Exception 在 LBP 只有 **Reassign**（PM↔Director）。 | Sale · Pricer · Profit Mgr · Director/CFO · RPT records |
+| **2 · Tracker**（PowerApps，独立 app） | LBP 里的 **Sync to Tracker** 小窗口写进这里。**PM 在 Tracker 填 exception 内容**（past performance / 附件），点 **Save**（存草稿）或 **Send**（→ 进 Director 的 Tracker）。**Director 在 Tracker 有 Approve / Reject 按钮** + KPI 计算器，点完带 note，结果回 PM + Sale（未读）。Sale / PM / Director 三个颜色看板（黄=待处理、蓝=Repricing、绿=已批、红=拒绝，黄色排最前）。有 **+ Add new**：LBP 没同步过来的 bid 可手动加，账户只能选 Main Table 里已有的。 | Sale · Profit Mgr · Director/CFO |
 | **3 · Reporting**（Power BI） | GA 分解树 / GTP 按 vertical 拆分；exception 表和 missing-input 表带 Geo / Vertical 筛选。 | GA · GTP |
 
 三个 tab 共用同一份 account + bid + RPT record 状态。右上角 **Activity log** 记录每一步。
