@@ -1,14 +1,14 @@
 # GA Repricing Platform — Prototype
 
-三层可点击原型，基于《GA Repricing Process Overview》的 Solution 部分（p.8–16）：
+可点击原型，基于《GA Repricing Process Overview》的 Solution 部分（p.8–16）。
 
-| Layer | 内容 | 角色 |
+| Tab | 内容 | 角色 |
 |---|---|---|
-| **1 · Repricing** | Sale 提交并打 Tag → Pricer 自动算价（line-by-line margin，flag RTX 等特殊 CPU）→ 直接批 / 转 Profit Manager | Sale · Pricer · Profit Manager |
-| **2 · Tracking**（PowerApps） | Sale 看板 + 确认表单；PM / Director 颜色看板（黄=待处理、蓝=RPG、绿=已批、红=拒绝）；Director 侧带一个有数据源支撑的影响计算器 | Sale · Profit Manager · Director/CFO |
-| **3 · Reporting**（Power BI） | GA 分解树 + GTP 按 vertical 拆分；exception / missing input 明细表 | GA · GTP |
+| **1 · LBP · RPT** | Sale 在 LBP 提交 bid，Description 里写 `RPG` / `Exception`。Pricer / PM / Director 从 work list 领 bid，打开 **RPT**（嵌在 LBP 里的算价工具）：Run → 看结果 → Sync to LPS → 一键 copy pricing note → Save record。**RPT 不做审批**，approve / reject 是 LBP work list 上的动作，且要先存了 RPT record 才解锁。 | Sale · Pricer · Profit Mgr · Director/CFO · RPT records |
+| **2 · Tracker**（PowerApps，独立 app） | LBP 里的 **Sync to Tracker** 小窗口写进这里。Sale 看板（lane / 谁更新 / 何时 / exception 进度）；PM、Director 的颜色看板（黄=待处理、蓝=RPG、绿=已批、红=拒绝，黄色排最前）——监控用，动作在 LBP。 | Sale · Profit Mgr · Director/CFO |
+| **3 · Reporting**（Power BI） | GA 分解树 / GTP 按 vertical 拆分；exception 表和 missing-input 表带 Geo / Vertical 筛选。 | GA · GTP |
 
-三层共用同一份 account + bid 状态，一处操作会同步到其它层。右上角 **Activity log** 记录每一步。
+三个 tab 共用同一份 account + bid + RPT record 状态。右上角 **Activity log** 记录每一步。
 
 ## 技术栈
 
