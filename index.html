@@ -385,11 +385,13 @@ function freshState(){
   const bids = [
     mkBid("B-5012","snowflake","RPG","s.chan","Pricer",[0,1,2]),
     mkBid("B-5013","zara","RPG","t.koch","Pricer",[0,3]),
-    mkBid("B-5009","rakuten","RPG","w.tan","PM",[3,0], {escalated:true})
+    mkBid("B-5009","rakuten","RPG","w.tan","Pricer",[3,0])
   ];
-  // pre-price the escalated one
+  // B-5009: already priced, margin below floor — Pricer must align with PM on Teams (no auto-routing)
   const b9 = bids.find(b=>b.id==="B-5009");
-  b9.priced=true; b9.status="sent-to-PM"; b9.pricerNote="Margin below floor on both lines — renewal at risk if we hold guidance. Need PM call.";
+  b9.priced=true; b9.status="priced"; b9.marginIssue=true;
+  b9.pricerNote="Both lines below the 5% floor at guidance. Renewal at risk if we hold. Aligning with PM on Teams before deciding.";
+  b9.autoNote="";
   b9.lines.forEach((l,i)=>{ l.marginPct = i===0?3.4:2.7; l.priced=true; });
 
   return {
@@ -408,7 +410,8 @@ function mkBid(id, accId, type, by, assignedTo, lineIdx, extra){
   return Object.assign({
     id, accountId:accId, type, submittedBy:by, submittedAt:stamp(),
     assignedTo, status:"assigned", priced:false, calcRunning:false,
-    pricerNote:"", pricerDecision:null,
+    pricerNote:"", autoNote:"", pricerDecision:null,
+    marginIssue:false, rejecting:false, rejectReason:"", lpsSynced:false,
     lines: lineIdx.map(i=>{
       const c=CATALOG[i];
       return {pn:c.pn, family:c.family, memory:c.memory, ssd:c.ssd, cpu:c.cpu, flag:c.flag,
@@ -435,12 +438,19 @@ const pp=v=>(v>=0?"+":"")+v.toFixed(2)+" pp";
 const A=id=>S.accounts.find(a=>a.id===id);
 const bidAcct=b=>A(b.accountId);
 
-function linePrice(l){ return l.flag ? (l.manualPrice? +l.manualPrice : null) : l.newPrice; }
+const hasManual=l=> l.manualPrice!=null && String(l.manualPrice).trim()!=="";
+function linePrice(l){
+  if(hasManual(l)) return +l.manualPrice;
+  return l.flag ? null : l.newPrice;              // flagged (RTX etc.) needs a manual price
+}
+function lineCost(l){
+  // cost implied by the automated catalog margin at the auto new price
+  return l.flag ? l.newPrice*(1-0.14) : l.newPrice*(1-(l.marginPct||0)/100);
+}
 function lineMargin(l){
-  if(l.flag && !l.manualPrice) return null;
-  if(!l.flag) return l.marginPct;
-  const p=+l.manualPrice, cost=l.newPrice*(1-14/100); // implied catalog cost basis
-  return +(((p-cost)/p)*100).toFixed(1);
+  const p=linePrice(l); if(p==null) return null;
+  if(hasManual(l)){ const c=lineCost(l); return +(((p-c)/p)*100).toFixed(1); }
+  return l.flag ? null : l.marginPct;
 }
 function bidMargin(b){
   let rev=0, gp=0, any=false;
@@ -450,6 +460,16 @@ function bidMargin(b){
     any=true; const r=p*l.qty; rev+=r; gp+=r*mg/100;
   });
   return any? +(gp/rev*100).toFixed(1) : null;
+}
+function genNote(b){
+  const a=bidAcct(b);
+  const head=`Repricing · ${a.name} · ${b.id} · ${a.geo}/${a.vertical} · GTP FY26 Aug (+10%)`;
+  const rows=b.lines.map(l=>{
+    const p=linePrice(l);
+    return `${l.pn} | prev ${money(l.base)} | ${l.memory} | ${l.ssd} (${l.cpu}) = ${p!=null?money(p):"manual $ pending"}`;
+  });
+  const bm=bidMargin(b);
+  return head+"\n"+rows.join("\n")+`\nBlended margin ${bm==null?"—":bm.toFixed(1)+"%"}`;
 }
 
 /* board colour for an account, from a role's point of view */
@@ -506,9 +526,8 @@ function render(){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function renderTabs(){
-  const rpg = S.bids.filter(b=>b.assignedTo==="Pricer"&&b.status==="assigned").length;
-  const pmq = S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake").length
-            + S.bids.filter(b=>b.assignedTo==="PM"&&b.status!=="pm-reviewed").length;
+  const rpg = S.bids.filter(b=>b.assignedTo==="Pricer"&&(b.status==="assigned"||b.status==="priced")).length;
+  const pmq = S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake").length;
   const dirq = S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="Director-review").length;
   const badge=n=>n?`<span class="n">${n}</span>`:"";
   const defs=[["repricing","1 · Repricing",rpg],["tracking","2 · Tracking",pmq+dirq],["reporting","3 · Reporting",0]];
@@ -581,17 +600,18 @@ function vwRepPricer(){
   const queue = S.bids.filter(b=>b.assignedTo==="Pricer");
   const cur = S.sel.pricerBid ? S.bids.find(b=>b.id===S.sel.pricerBid) : null;
   return `
-  <p class="lede"><b>Layer 1 — Repricing · Pricer.</b> Open an RPG bid and run the automated calc. It returns the ref bid used, the original price, memory / SSD config, and flags special CPUs (e.g. RTX) for a manual line. Every line gets its own margin — then approve, or send to the Profit Manager.</p>
+  <p class="lede"><b>Layer 1 — Repricing · Pricer.</b> Open a bid and run the automated calc: ref bid, original price, memory / SSD, and special CPUs (RTX etc.) flagged for a manual price. Edit any line price and its margin recalculates live. The pricer note is auto-written line by line — add to it freely. Then <b>approve</b> or <b>reject</b>. A margin problem is not a hand-off — flag it and align with the PM on Teams yourself.</p>
   <div class="board">
     <div>
-      <div class="tiny" style="margin-bottom:8px">RPG queue · ${queue.length}</div>
+      <div class="tiny" style="margin-bottom:8px">Queue · ${queue.length}</div>
       <div class="blist">
         ${queue.map(b=>{
           const a=bidAcct(b); const sel=S.sel.pricerBid===b.id;
-          const c = b.status==="approved"?"green":b.status==="sent-to-PM"?"yellow":"blue";
+          const c = b.status==="approved"?"green":b.status==="rejected"?"red":b.marginIssue?"yellow":"blue";
+          const bm=bidMargin(b);
           return `<div class="brow ${c} ${sel?"sel":""}" data-act="pick-bid" data-id="${b.id}">
             <span class="stripe"></span>
-            <span><span class="nm">${a.name}</span><span class="meta">${b.id} · ${b.lines.length} lines · ${b.priced?(bidMargin(b)!=null?bidMargin(b)+"% blended":"needs manual line"):"not priced"}</span></span>
+            <span><span class="nm">${a.name}${b.marginIssue?` <span class="pill warn">margin</span>`:""}</span><span class="meta">${b.id} · ${b.lines.length} lines · ${b.priced?(bm!=null?bm+"% blended":"manual line pending"):"not priced"}</span></span>
             <span>${statusPill(b.status)}</span></div>`;
         }).join("") || `<div class="callout">Queue empty.</div>`}
       </div>
@@ -601,6 +621,7 @@ function vwRepPricer(){
 }
 function pricerDetail(b){
   const a=bidAcct(b);
+  if(b.priced && !b.autoNote) b.autoNote = genNote(b);
   const steps=[
     ["Bid + comment auto-ingested", `Bid ${b.id} from LBP · comment parsed`],
     ["Auto-fetch ref bid + original price", `see line table`],
@@ -616,45 +637,66 @@ function pricerDetail(b){
     </div>`).join("");
 
   const rows = b.lines.map((l,i)=>{
-    const mg=lineMargin(l), p=linePrice(l);
-    const flagCell = l.flag
-      ? `<input class="mono" style="width:96px;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);text-align:right" placeholder="manual $" data-line="${i}" value="${l.manualPrice||""}">`
-      : money(p);
+    const mg=lineMargin(l);
+    const priceCell = `<input class="mono" style="width:104px;padding:5px 6px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);color:var(--ink);text-align:right" placeholder="${l.flag?"manual $":""}" data-linebid="${b.id}" data-line="${i}" value="${hasManual(l)?l.manualPrice:(l.flag?"":l.newPrice.toFixed(2))}">`;
     return `<tr class="${l.flag?"lineflag":""}">
       <td class="mono">${l.pn}<div class="tiny">${l.family}</div></td>
       <td class="mono">${l.refBid}</td>
       <td class="num">${money(l.base)}</td>
       <td class="mono">${l.memory}<div class="tiny">${l.ssd}</div></td>
       <td class="mono">${l.cpu}${l.flag?` <span class="pill bad">RTX · manual</span>`:""}</td>
-      <td class="num">${b.priced?flagCell:"—"}</td>
-      <td class="num">${b.priced? (mg==null?`<span class="pill warn">manual</span>`:`${mg.toFixed(1)}%`) : "—"}</td>
+      <td class="num">${b.priced?priceCell:"—"}</td>
+      <td class="num" id="lm-${b.id}-${i}">${b.priced? (mg==null?`<span class="pill warn">enter $</span>`:`${mg.toFixed(1)}%`) : "—"}</td>
     </tr>`;
   }).join("");
   const bm=bidMargin(b);
-  const canDecide = b.priced && b.status!=="approved" && b.status!=="sent-to-PM";
+  const decided = b.status==="approved" || b.status==="rejected";
 
   return `<div class="bdetail">
-    <div class="dhead"><h3>${a.name}</h3><div class="sub">${b.id} · RPG · submitted by ${b.submittedBy} · ${a.geo} / ${a.vertical}</div></div>
+    <div class="dhead"><h3>${a.name}</h3><div class="sub">${b.id} · ${b.type} · submitted by ${b.submittedBy} · ${a.geo} / ${a.vertical}</div></div>
     <div class="dbody">
       <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Automated calc <span class="plat">${b.id}</span></div>
         <div class="body"><div class="checks">${checks}</div></div></div>
       ${!b.priced ? `<div><button class="btn primary" data-act="run-calc" data-id="${b.id}" ${b.calcRunning?"disabled":""}>${b.calcRunning?"Calculating…":"▶ Run automated calc"}</button></div>` : `
-      <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Line-by-line result <span class="plat">${b.lines.length} lines</span></div>
+      <div class="appwin"><div class="bar"><span class="dots"><i></i><i></i><i></i></span> Line-by-line result <span class="plat">edit any price</span></div>
         <div class="body" style="overflow-x:auto">
           <table class="sheet">
             <thead><tr><th>PN / model</th><th>Ref bid</th><th class="num">Orig. price</th><th>Memory / SSD</th><th>CPU</th><th class="num">New price</th><th class="num">Margin</th></tr></thead>
             <tbody>${rows}</tbody>
-            <tfoot><tr class="total"><td colspan="6">Blended bid margin</td><td class="num">${bm==null?`<span class="pill warn">enter manual line</span>`:bm.toFixed(1)+"%"}</td></tr></tfoot>
+            <tfoot><tr class="total"><td colspan="6">Blended bid margin</td><td class="num" id="bm-${b.id}">${bm==null?`<span class="pill warn">enter manual line</span>`:bm.toFixed(1)+"%"}</td></tr></tfoot>
           </table>
         </div></div>
-      <div class="field"><label>Pricer note (to PM, if escalating)</label>
-        <textarea data-input="pricerNote" data-id="${b.id}" placeholder="Why this needs a PM call…">${esc(b.pricerNote)}</textarea></div>
-      ${b.status==="approved"?`<div class="callout good">✓ Approved & written back. Account is now waiting for Sale to confirm the contract and submit the RPG tracker form.</div>`:""}
-      ${b.status==="sent-to-PM"?`<div class="callout warn">→ Sent to Profit Manager for a margin call. See the Profit Manager role.</div>`:""}
-      ${canDecide? `<div style="display:flex;gap:10px">
-        <button class="btn ok" data-act="pricer-approve" data-id="${b.id}">✓ Approve directly</button>
-        <button class="btn danger" data-act="pricer-escalate" data-id="${b.id}">→ Send to Profit Manager</button>
-      </div>`:""}
+
+      <div class="field"><label>Pricer note — auto-generated, line by line</label>
+        <div class="ro" style="white-space:pre-wrap;font-size:11px;line-height:1.55">${esc(b.autoNote||genNote(b))}</div>
+        <div style="margin-top:6px"><button class="btn ghost sm" data-act="regen-note" data-id="${b.id}">↻ Regenerate from current prices</button></div>
+      </div>
+      <div class="field"><label>Additional notes (free text)</label>
+        <textarea data-input="pricerNote" data-id="${b.id}" placeholder="Anything else the record needs…">${esc(b.pricerNote)}</textarea></div>
+
+      ${b.marginIssue ? `<div class="callout warn"><b>⚑ Margin issue flagged.</b> Below the 5% floor. Contact Profit Manager <b>${PM_OF[a.mgr]}</b> on Teams to align — this is <b>not</b> a system hand-off; you still approve or reject here once you've agreed.
+        <div style="margin-top:8px"><button class="btn ghost sm" data-act="pricer-flag" data-id="${b.id}">Clear flag</button></div></div>`
+       : (b.priced && !decided ? `<div><button class="btn ghost sm" data-act="pricer-flag" data-id="${b.id}">⚑ Flag margin issue (align with PM on Teams)</button></div>` : "")}
+
+      ${b.status==="approved" ? `
+        <div class="callout good">✓ <b>Approved</b> & written back. Waiting for Sale to confirm the pricing with the customer.</div>
+        <div class="callout info">↔ <b>Sync to LPS.</b> Approved prices are queued to push back to LPS. <span class="tiny">Write access / integration to LPS still to be confirmed with the platform team.</span>
+          <div style="margin-top:8px"><button class="btn ghost sm" data-act="lps-sync" data-id="${b.id}" ${b.lpsSynced?"disabled":""}>${b.lpsSynced?"✓ Sent to LPS":"Push to LPS"}</button></div></div>
+      ` : b.status==="rejected" ? `
+        <div class="callout bad">✕ <b>Rejected.</b> ${esc(b.rejectReason)} — sent back to Sale.</div>
+      ` : b.rejecting ? `
+        <div class="field"><label>Rejection reason — goes back to Sale</label>
+          <textarea data-input="rejectReason" data-id="${b.id}">${esc(b.rejectReason)}</textarea></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn danger" data-act="pricer-reject-confirm" data-id="${b.id}">Confirm rejection</button>
+          <button class="btn ghost" data-act="pricer-reject-cancel" data-id="${b.id}">Cancel</button>
+        </div>
+      ` : b.priced ? `
+        <div style="display:flex;gap:10px">
+          <button class="btn ok" data-act="pricer-approve" data-id="${b.id}">✓ Approve</button>
+          <button class="btn danger" data-act="pricer-reject" data-id="${b.id}">✕ Reject</button>
+        </div>
+      ` : ""}
       `}
     </div>
   </div>`;
@@ -662,45 +704,31 @@ function pricerDetail(b){
 
 /* ============================================================ L1 · Repricing · PM */
 function vwRepPM(){
-  const escalated = S.bids.filter(b=>b.assignedTo==="PM");
-  const cur = S.sel.pricerBid ? S.bids.find(b=>b.id===S.sel.pricerBid && b.assignedTo==="PM") : null;
+  const flagged = S.bids.filter(b=>b.marginIssue && b.status!=="approved" && b.status!=="rejected");
+  const excIntake = S.accounts.filter(a=>a.track==="Exception" && a.exception && a.exception.stage==="PM-intake");
   return `
-  <p class="lede"><b>Layer 1 — Repricing · Profit Manager.</b> The PM handles a share of RPG bids but spends most time on other pricing (transition, NPI, deal-specific) handled outside this tool. Here the platform covers two things: <b>margin calls escalated by Pricers</b>, and <b>exception intake</b> (the form Sale fills flows straight to Layer 2 → the Tracking board).</p>
-  <div class="board">
-    <div>
-      <div class="tiny" style="margin-bottom:8px">Escalated RPG bids · ${escalated.length}</div>
-      <div class="blist">
-        ${escalated.map(b=>{
-          const a=bidAcct(b); const sel=S.sel.pricerBid===b.id;
-          const c=b.status==="pm-reviewed"?"green":"yellow";
-          return `<div class="brow ${c} ${sel?"sel":""}" data-act="pick-bid" data-id="${b.id}">
-            <span class="stripe"></span>
-            <span><span class="nm">${a.name}</span><span class="meta">${b.id} · ${bidMargin(b)!=null?bidMargin(b)+"% blended":"—"} · from ${b.submittedBy}</span></span>
-            <span>${statusPill(b.status)}</span></div>`;
-        }).join("") || `<div class="callout">Nothing escalated.</div>`}
-      </div>
-      <div class="card" style="margin-top:12px;box-shadow:none">
-        <h3>Other pricing <span class="plat">outside this tool</span></h3>
-        <div class="pad tiny">Transition pricing · NPI quotes · deal-specific bids — the majority of PM workload, handled in LPS / CFE. Not shown here.</div>
+  <p class="lede"><b>Layer 1 — Repricing · Profit Manager.</b> Most PM time goes to other pricing — transition, NPI, deal-specific — handled outside this tool. On the platform the PM has visibility into two things: the <b>margin issues Pricers are raising</b> (aligned on Teams, not routed here) and <b>exception intake</b>, handled on the Tracking board.</p>
+  <div class="cols2">
+    <div class="card">
+      <h3>Margin issues Pricers are raising <span class="plat">align on Teams</span></h3>
+      <div class="pad">
+        ${flagged.length ? `<table class="sheet">
+          <thead><tr><th>Bid</th><th>Account</th><th class="num">Blended</th><th>Pricer</th></tr></thead>
+          <tbody>${flagged.map(b=>{const a=bidAcct(b);return `<tr><td class="mono">${b.id}</td><td><b>${a.name}</b></td><td class="num">${bidMargin(b)!=null?bidMargin(b)+"%":"—"}</td><td class="mono">${b.submittedBy}</td></tr>`;}).join("")}</tbody>
+        </table>
+        <div class="callout warn" style="margin-top:10px">These stay with the Pricer. Discuss the call on Teams; the Pricer approves or rejects on their screen.</div>`
+        : `<div class="callout good">No open margin issues.</div>`}
       </div>
     </div>
-    ${cur? pmRepDetail(cur) : `<div class="bdetail"><div class="dbody"><div class="callout">← pick an escalated bid, or go to the exception intake list under <b>Tracking · Profit Manager</b>.</div>
-      ${S.accounts.some(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake")?`<div class="callout yellow" style="margin-top:10px">${S.accounts.filter(a=>a.track==="Exception"&&a.exception&&a.exception.stage==="PM-intake").length} exception intake(s) waiting on the Tracking board.</div>`:""}
-    </div></div>`}
-  </div>`;
-}
-function pmRepDetail(b){
-  const a=bidAcct(b);
-  const rows=b.lines.map(l=>`<tr><td class="mono">${l.pn}</td><td class="num">${money(l.base)}</td><td class="num">${money(l.newPrice)}</td><td class="num">${(lineMargin(l)||0).toFixed(1)}%</td></tr>`).join("");
-  return `<div class="bdetail">
-    <div class="dhead"><h3>${a.name}</h3><div class="sub">${b.id} · escalated by ${b.submittedBy}</div></div>
-    <div class="dbody">
-      <div class="callout warn"><b>Pricer's note:</b> ${esc(b.pricerNote||"—")}</div>
-      <table class="sheet"><thead><tr><th>PN</th><th class="num">Orig.</th><th class="num">New</th><th class="num">Margin</th></tr></thead><tbody>${rows}</tbody>
-        <tfoot><tr class="total"><td colspan="3">Blended</td><td class="num">${bidMargin(b)}%</td></tr></tfoot></table>
-      ${b.status==="pm-reviewed"? `<div class="callout good">✓ Resolved by PM — bid finalized, no Director/CFO needed (margin/SSD special case).</div>` : `
-      <div class="field"><label>PM resolution</label><textarea data-input="pmResolve" data-id="${b.id}" placeholder="e.g. approve a one-notch discount to hold the renewal; document rationale.">Hold at guidance minus one tier for the renewal tranche; account history supports it. No escalation.</textarea></div>
-      <button class="btn ok" data-act="pm-resolve-bid" data-id="${b.id}">Resolve directly → bid finalized</button>`}
+    <div class="stack">
+      <div class="card"><h3>Other pricing <span class="plat">outside this tool</span></h3>
+        <div class="pad tiny">Transition pricing · NPI quotes · deal-specific bids — the majority of PM workload, handled in LPS / CFE.</div></div>
+      <div class="card"><h3>Exception intake <span class="plat">→ Tracking board</span></h3>
+        <div class="pad stack">
+          ${excIntake.length ? excIntake.map(a=>`<div class="qitem"><span class="qmain"><b>${a.name}</b><div>${a.geo} · ${a.vertical} · Sale Mgr ${a.mgr}</div></span><span class="pill yellow">PM-intake</span></div>`).join("") : `<div class="tiny">No exceptions waiting.</div>`}
+          <div class="callout">Compile and submit these under <b>Tracking · Profit Manager</b>.</div>
+        </div>
+      </div>
     </div>
   </div>`;
 }
@@ -722,7 +750,7 @@ function vwTrkSale(){
   };
   const confAcct = S.sel.saleAcct && needConfirm.find(a=>a.id===S.sel.saleAcct);
   return `
-  <p class="lede"><b>Layer 2 — Tracking · Sale.</b> After the Pricer finishes, Sale confirms the contract and submits the tracker form (LBP plug-in). RPG asks four questions; Exception is just a tag — the rest follows the PM flow. The dashboard shows every account in a manager's book: who last updated it, when, its lane, and how far an exception has progressed.</p>
+  <p class="lede"><b>Layer 2 — Tracking · Sale.</b> When the Pricer approves, Sale reviews the result and <b>confirms the pricing with the customer</b> — that locks the lane to RPG in the Tracker, so the tracker form is pre-defined. RPG then asks four questions; Exception is just a tag. The dashboard shows every account in a manager's book: last updated by whom, when, its lane, and how far an exception has progressed.</p>
 
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
@@ -741,7 +769,7 @@ function vwTrkSale(){
           <thead><tr><th>Account</th><th>Lane</th><th>Last updated by</th><th>When</th><th>Exception progress</th></tr></thead>
           <tbody>${list.map(a=>`<tr class="click" data-act="pick-sale" data-id="${a.id}">
             <td><b>${a.name}</b><div class="tiny">${a.geo} · ${a.vertical}</div>${a.unread.sale?` <span class="pill bad">● unread result</span>`:""}</td>
-            <td>${a.track==="RPG"?`<span class="pill info">RPG</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:`<span class="pill mut">not set</span>`}</td>
+            <td>${a.track==="RPG"?`<span class="pill info">RPG</span>`:a.track==="Exception"?`<span class="pill yellow">Exception</span>`:a.needsSaleConfirm?`<span class="pill warn">pricing done</span>`:`<span class="pill mut">not set</span>`}${a.needsSaleConfirm&&a._pricingConfirmed?`<div class="tiny">form pending</div>`:a.needsSaleConfirm?`<div class="tiny">confirm pricing</div>`:""}</td>
             <td class="mono">${a.lastBy||"—"}</td>
             <td class="mono">${a.lastAt||"—"}</td>
             <td>${stageLabel(a)}</td></tr>`).join("")}</tbody>
@@ -764,31 +792,46 @@ function vwTrkSale(){
   ${S.sel.saleAcct && A(S.sel.saleAcct) && A(S.sel.saleAcct).exception ? saleExcResult(A(S.sel.saleAcct)) : ""}`;
 }
 function saleConfirmForm(a){
-  const isExc = a.track==="Exception" || S._confirmType==="Exception";
+  const b = a.pricedBidId ? S.bids.find(x=>x.id===a.pricedBidId) : null;
+
+  // Stage 1 — review the Pricer's result, confirm (or not) with the customer
+  if(b && b.status==="approved" && !a._pricingConfirmed){
+    const rows=b.lines.map(l=>`<tr><td class="mono">${l.pn}</td><td class="num">${money(linePrice(l))}</td><td class="num">${(lineMargin(l)??0).toFixed(1)}%</td></tr>`).join("");
+    return `
+      <div class="callout info"><b>Review the Pricer's result</b>, then confirm with the customer. Confirming locks the lane to <b>RPG</b> in the Tracker.</div>
+      <table class="sheet"><thead><tr><th>PN</th><th class="num">New price</th><th class="num">Margin</th></tr></thead><tbody>${rows}</tbody>
+        <tfoot><tr class="total"><td>Blended</td><td class="num"></td><td class="num">${bidMargin(b)}%</td></tr></tfoot></table>
+      <div class="field"><label>Pricer note</label>
+        <div class="ro" style="white-space:pre-wrap;font-size:11px;line-height:1.55">${esc((b.autoNote||"")+(b.pricerNote?"\n\n"+b.pricerNote:""))}</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn ok" data-act="sale-confirm-pricing" data-id="${a.id}">✓ Customer accepts — confirm</button>
+        <button class="btn danger" data-act="sale-customer-declined" data-id="${a.id}">Customer declined</button>
+      </div>`;
+  }
+
+  // Exception lane — nothing to price, just a tag
+  if(a.track==="Exception"){
+    return `
+      <div class="callout warn">This bid is on the <b>Exception</b> lane — the intake is with Profit Manager ${PM_OF[a.mgr]}, then Director/CFO. Nothing more to fill; you'll get an unread notification when it's decided.</div>
+      <button class="btn primary" data-act="sale-confirm-exc" data-id="${a.id}">Acknowledge — Exception in progress</button>`;
+  }
+
+  // Stage 2 — RPG tracker form (lane already locked to RPG)
   return `
-    <div class="field"><label>Confirm — which lane did the customer agree to?</label>
-      <div class="segfield" data-input="confirmType">
-        <button data-val="RPG" aria-pressed="${!isExc}">RPG · per guidance</button>
-        <button data-val="Exception" aria-pressed="${isExc}">Exception</button>
-      </div></div>
-    ${isExc? `
-      <div class="callout warn">Just tag it Exception — the intake goes to the Profit Manager, then Director/CFO. You'll get an unread notification when it's decided.</div>
-      <button class="btn primary" data-act="sale-confirm-exc" data-id="${a.id}">Mark as Exception &amp; submit</button>
-    ` : `
-      <div class="grid2">
-        <div class="field"><label>Q1 · Is it an Active account?</label>
-          <select data-input="q_active"><option>Yes</option><option>No</option></select></div>
-        <div class="field"><label>Q2 · Followed full guidance?</label>
-          <select data-input="q_guidance"><option>Full</option><option>Partial</option><option>None</option></select></div>
-      </div>
-      <div class="grid2">
-        <div class="field"><label>Q3 · Effective date</label>
-          <input type="date" data-input="q_eff" value="2026-02-01"></div>
-        <div class="field"><label>Q4 · LNL in place?</label>
-          <select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
-      </div>
-      <button class="btn primary" data-act="sale-confirm-rpg" data-id="${a.id}">Submit RPG tracker form</button>
-    `}`;
+    <div class="callout good">Pricing confirmed — lane locked to <b>RPG</b>. Fill the tracker form.</div>
+    <div class="grid2">
+      <div class="field"><label>Q1 · Is it an Active account?</label>
+        <select data-input="q_active"><option>Yes</option><option>No</option></select></div>
+      <div class="field"><label>Q2 · Followed full guidance?</label>
+        <select data-input="q_guidance"><option>Full</option><option>Partial</option><option>None</option></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Q3 · Effective date</label>
+        <input type="date" data-input="q_eff" value="2026-02-01"></div>
+      <div class="field"><label>Q4 · LNL in place?</label>
+        <select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
+    </div>
+    <button class="btn primary" data-act="sale-confirm-rpg" data-id="${a.id}">Submit RPG tracker form</button>`;
 }
 function saleExcResult(a){
   if(!a.exception || !a.exception.decision) return "";
@@ -1027,9 +1070,8 @@ function brow(a,c,role){
   </div>`;
 }
 function statusPill(s){
-  const map={assigned:"warn",priced:"info",approved:"good","sent-to-PM":"warn","pm-reviewed":"good",
-    Submitted:"warn"};
-  const label={assigned:"assigned",priced:"priced","sent-to-PM":"with PM","pm-reviewed":"resolved"}[s]||s;
+  const map={assigned:"warn",priced:"info",approved:"good",rejected:"bad",declined:"mut",Submitted:"warn"};
+  const label={assigned:"assigned",priced:"priced",approved:"approved",rejected:"rejected",declined:"declined"}[s]||s;
   return `<span class="pill ${map[s]||"mut"}">${label}</span>`;
 }
 
@@ -1136,12 +1178,14 @@ function bind(){
     node.onchange=()=>inputChange(key,node.value,node);
     if(node.tagName==="TEXTAREA") node.oninput=()=>inputChange(key,node.value,node,true);
   });
-  $$("[data-line]").forEach(inp=>{
+  $$("[data-linebid]").forEach(inp=>{
     inp.oninput=()=>{
-      const b=S.bids.find(x=>x.id===S.sel.pricerBid); if(!b)return;
-      b.lines[+inp.dataset.line].manualPrice=inp.value.replace(/[^0-9.]/g,"");
-      // light re-render of just the footer margin would be nicer; keep simple:
-      const foot=inp.closest("table")?.querySelector("tfoot .num");
+      const b=S.bids.find(x=>x.id===inp.dataset.linebid); if(!b)return;
+      const i=+inp.dataset.line, l=b.lines[i];
+      l.manualPrice=inp.value.replace(/[^0-9.]/g,"");
+      const mc=document.getElementById("lm-"+b.id+"-"+i);
+      if(mc){ const mg=lineMargin(l); mc.innerHTML = mg==null?'<span class="pill warn">enter $</span>':mg.toFixed(1)+"%"; }
+      const foot=document.getElementById("bm-"+b.id);
       if(foot){ const bm=bidMargin(b); foot.innerHTML = bm==null?'<span class="pill warn">enter manual line</span>':bm.toFixed(1)+"%"; }
     };
   });
@@ -1172,6 +1216,7 @@ function inputChange(key,val,node,silent){
     case "q_eff": S._qEff=val; break;
     case "q_lnl": S._qLnl=val; break;
     case "pricerNote": { const b=S.bids.find(x=>x.id===node.dataset.id); if(b)b.pricerNote=val; break; }
+    case "rejectReason": { const b=S.bids.find(x=>x.id===node.dataset.id); if(b)b.rejectReason=val; break; }
     case "pmResolve": { S._pmResolve=val; break; }
     case "perf": { const a=A(node.dataset.id); if(a&&a.exception)a.exception.performance=val; break; }
     case "dirNote": { const a=A(node.dataset.id); if(a&&a.exception)a.exception.decisionNote=val; break; }
@@ -1211,31 +1256,45 @@ const ACT = {
     b.calcRunning=true; render();
     setTimeout(()=>{ b.calcRunning=false; b.priced=true; b.status="priced";
       b.lines.forEach(l=>l.priced=true);
-      log(`Pricer ran the automated calc on <b>${bidAcct(b).name}</b> (${b.id}) — ${b.lines.length} lines priced${b.lines.some(l=>l.flag)?", 1 RTX line flagged for manual":""}.`);
+      b.autoNote=genNote(b);
+      log(`Pricer ran the automated calc on <b>${bidAcct(b).name}</b> (${b.id}) — ${b.lines.length} lines priced${b.lines.some(l=>l.flag)?", 1 RTX line flagged for a manual price":""}.`);
       render();
     }, 950);
   },
+  "regen-note"(d){ const b=S.bids.find(x=>x.id===d.id); if(b) b.autoNote=genNote(b); render(); },
+  "pricer-flag"(d){
+    const b=S.bids.find(x=>x.id===d.id); if(!b) return;
+    b.marginIssue=!b.marginIssue;
+    if(b.marginIssue) log(`Pricer flagged a margin issue on ${b.id} (${bidAcct(b).name}) — aligning with PM ${PM_OF[bidAcct(b).mgr]} on Teams.`);
+    render();
+  },
   "pricer-approve"(d){
     const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
-    b.status="approved"; b.pricerDecision="approve";
-    a.needsSaleConfirm=true;
-    log(`Pricer <b>approved</b> ${b.id} (${a.name}) — blended margin ${bidMargin(b)}%. Written back; Sale to confirm the contract.`, true);
+    b.status="approved"; b.pricerDecision="approve"; b.marginIssue=false;
+    a.needsSaleConfirm=true; a.pricedBidId=b.id;
+    log(`Pricer <b>approved</b> ${b.id} (${a.name}) — blended margin ${bidMargin(b)}%. Written back; Sale to confirm pricing with the customer.`, true);
     toast(`${a.name} approved — waiting on Sale confirmation.`);
     render();
   },
-  "pricer-escalate"(d){
-    const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
-    b.status="sent-to-PM"; b.pricerDecision="escalate"; b.assignedTo="PM";
-    log(`Pricer <b>escalated</b> ${b.id} (${a.name}) to Profit Manager — ${esc(b.pricerNote||"margin call")}.`, true);
-    toast(`${a.name} sent to Profit Manager.`);
+  "pricer-reject"(d){
+    const b=S.bids.find(x=>x.id===d.id); if(!b) return;
+    b.rejecting=true;
+    if(!b.rejectReason) b.rejectReason="Configuration can't hold the guided price — revise the PN mix or volume commitment and resubmit.";
     render();
   },
-  "pm-resolve-bid"(d){
+  "pricer-reject-cancel"(d){ const b=S.bids.find(x=>x.id===d.id); if(b) b.rejecting=false; render(); },
+  "pricer-reject-confirm"(d){
     const b=S.bids.find(x=>x.id===d.id); const a=bidAcct(b);
-    b.status="pm-reviewed";
-    a.needsSaleConfirm=true;
-    log(`Profit Manager resolved ${b.id} (${a.name}) directly — bid finalized, no Director/CFO. ${esc(S._pmResolve||"")}`, true);
-    toast(`${a.name} resolved by PM — no escalation.`);
+    b.rejecting=false; b.status="rejected"; b.pricerDecision="reject"; b.marginIssue=false;
+    log(`Pricer <b>rejected</b> ${b.id} (${a.name}) — ${esc(b.rejectReason)}. Sent back to Sale.`, true);
+    toast(`${a.name} pricing rejected — back to Sale.`);
+    render();
+  },
+  "lps-sync"(d){
+    const b=S.bids.find(x=>x.id===d.id); if(!b) return;
+    b.lpsSynced=true;
+    log(`Approved pricing for <b>${bidAcct(b).name}</b> (${b.id}) pushed to LPS (pending integration / write permissions).`);
+    toast("Queued to LPS.");
     render();
   },
 
@@ -1243,14 +1302,30 @@ const ACT = {
     const a=A(d.id); if(a && a.unread.sale){ a.unread.sale=false; log(`Sale opened <b>${a.name}</b> — exception result read.`); }
     render();
   },
+  "sale-confirm-pricing"(d){
+    const a=A(d.id);
+    a._pricingConfirmed=true; a.track="RPG";
+    a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
+    log(`Sale confirmed pricing with the customer for <b>${a.name}</b> — lane set to <b>RPG</b> in the Tracker.`, true);
+    toast(`${a.name} pricing confirmed — RPG lane.`);
+    render();
+  },
+  "sale-customer-declined"(d){
+    const a=A(d.id);
+    const b=S.bids.find(x=>x.id===a.pricedBidId); if(b) b.status="declined";
+    a.needsSaleConfirm=false; a._pricingConfirmed=false; a.pricedBidId=null;
+    log(`Sale: customer declined the priced bid for <b>${a.name}</b>. Bid closed.`, true);
+    toast(`${a.name} — customer declined.`);
+    S.sel.saleAcct=null; render();
+  },
   "sale-confirm-rpg"(d){
     const a=A(d.id);
-    a.track="RPG"; a.active=(S._qActive||"Yes")==="Yes";
+    a.track="RPG"; a._pricingConfirmed=true; a.active=(S._qActive||"Yes")==="Yes";
     a.guidance=S._qGuid||"Full"; a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
     a.needsSaleConfirm=false;
-    log(`Sale confirmed <b>${a.name}</b> — RPG · ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}. Written to Sub Table.`, true);
-    toast(`${a.name} confirmed — RPG tracker form submitted.`);
+    log(`Sale submitted the RPG tracker form for <b>${a.name}</b> — ${a.guidance} guidance · effective ${a.effective} · LNL ${a.lnl?"yes":"no"}. Written to Sub Table.`, true);
+    toast(`${a.name} — RPG tracker form submitted.`);
     S.sel.saleAcct=null; render();
   },
   "sale-confirm-exc"(d){
