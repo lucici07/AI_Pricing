@@ -1031,9 +1031,12 @@ function vwReport(kind){
     <div class="s">Rev ${m2(s.rev)} · GP ${m2(s.gp)} · GP Impact ${m2(s.imp)}</div></div>`;
 
   return `
-  <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px">
-    <p class="lede" style="margin:0"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the book by status.":"The <b>GTP</b> page breaks it down by vertical."} <b>Partial Uplift → Partial Exception</b>, <b>No Uplift → Full Exception</b> — filterable below for sizing.</p>
-    <span class="tiny mono">As of ${today()}</span>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:10px">
+    <p class="lede" style="margin:0;flex:1;min-width:280px"><b>Layer 3 — Reporting (Power BI, live from the Tracker's Main Table).</b> ${kind==="GA"?"The <b>GA</b> page decomposes the book by status.":"The <b>GTP</b> page breaks it down by vertical."} <b>Partial Uplift → Partial Exception</b>, <b>No Uplift → Full Exception</b> — filterable below for sizing.</p>
+    <div style="border:1px solid var(--border-strong);border-radius:10px;padding:8px 16px;background:var(--surface);text-align:right;white-space:nowrap">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700">Report date</div>
+      <div style="font-family:var(--fs-display);font-weight:600;font-size:22px;line-height:1.15;color:var(--brand)">${today()}</div>
+    </div>
   </div>
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${R.total}</div><div class="l">GA accounts</div></div>
