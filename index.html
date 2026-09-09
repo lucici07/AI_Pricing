@@ -1065,7 +1065,11 @@ function vwReport(kind){
           <td class="mono">${a.effective||"—"}</td><td class="mono">${a.caNo||"—"}</td>
           <td class="num">${(f.rev/1e6).toFixed(2)}</td><td class="num">${(f.gp/1e6).toFixed(2)}</td><td class="num">${(f.impact/1e6).toFixed(2)}</td>
           <td>${a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill yellow">${a.exception?.stage||"pending"}</span>`}</td></tr>`; }).join("")
-          || `<tr><td colspan="11" class="tiny">none match the filter</td></tr>`}</tbody></table></div>
+          || `<tr><td colspan="11" class="tiny">none match the filter</td></tr>`}</tbody>
+        ${exc.length? (()=>{ const tR=exc.reduce((s,a)=>s+acctFin(a).rev,0), tG=exc.reduce((s,a)=>s+acctFin(a).gp,0), tI=exc.reduce((s,a)=>s+acctFin(a).impact,0);
+          return `<tfoot><tr class="total"><td colspan="7">Total — ${exc.length} exception account${exc.length>1?"s":""}${F.excClass!=="All"?" · "+F.excClass:""}${F.geo!=="All"?" · "+F.geo:""}${F.vertical!=="All"?" · "+F.vertical:""}</td>
+            <td class="num">${(tR/1e6).toFixed(2)}</td><td class="num">${(tG/1e6).toFixed(2)}</td><td class="num">${(tI/1e6).toFixed(2)}</td><td></td></tr></tfoot>`; })() : ""}
+        </table></div>
 
       <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
       <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>ISR</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
