@@ -341,6 +341,7 @@ const GUID_OF={"Full Uplift":"Full","Partial Uplift":"Partial","No Uplift":"None
 
 function acc(o){ return Object.assign({
   active:true, track:null, guidance:null, uplift:null, caNo:null, effective:null, lnl:null,
+  excRev:null, excGp:null, excImpact:null,
   lastBy:null, lastAt:null, exception:null, unread:{sale:false,pm:false}
 }, o); }
 function mkLines(idx){ return idx.map(i=>{ const c=CATALOG[i];
@@ -446,13 +447,20 @@ const excClassOf=a=>{
   return null;
 };
 const effType=b=>{ const a=bidAcct(b); return (a&&a.track==="Exception")||b.type==="Exception"?"Exception":"RPG"; };
+const _num=v=>{ const n=parseFloat(v); return isFinite(n)?n:null; };
 function acctFin(a){
   const b=S.bids.find(x=>x.accountId===a.id);
   const lines=(b&&b.lines&&b.lines.length)?b.lines:mkLines([0,2]);
-  const rev=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0),0);
-  const gp=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0)*((l.marginPct||10)/100),0);
+  const cRev=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0),0);
+  const cGp=lines.reduce((s,l)=>s+(l.newPrice||0)*(l.qty||0)*((l.marginPct||10)/100),0);
   const gap=a.uplift==="Partial Uplift"?0.045:a.uplift==="No Uplift"?0.09:0;
-  return {rev, gp, impact:rev*gap};
+  const oR=_num(a.excRev), oG=_num(a.excGp), oI=_num(a.excImpact);
+  return {
+    rev: oR!=null? oR*1e6 : cRev,
+    gp:  oG!=null? oG*1e6 : cGp,
+    impact: oI!=null? oI*1e6 : cRev*gap,
+    manual: oR!=null||oG!=null||oI!=null
+  };
 }
 
 const hasManual=l=>l.manualPrice!=null&&String(l.manualPrice).trim()!=="";
@@ -889,7 +897,7 @@ function saleInfoBlock(a){
   const sel=(v,opts)=>opts.map(o=>`<option ${o===v?"selected":""}>${o}</option>`).join("");
   const f=(label,inner)=>`<div class="field"><label>${label}</label>${inner}</div>`;
   const cls=excClassOf(a);
-  return `<div class="card" style="box-shadow:none"><h3>Sale-filled tracker info <span class="plat">PM / Director may edit</span></h3><div class="pad">
+  return `<div class="card" style="box-shadow:none"><h3>Account &amp; exception info <span class="plat">PM / Director editable</span></h3><div class="pad">
     <div class="grid3">
       ${f("Active account?", `<select data-input="edActive" data-id="${a.id}">${sel(a.active?"Yes":"No",["Yes","No"])}</select>`)}
       ${f("Uplift agreed", `<select data-input="edUplift" data-id="${a.id}">${sel(a.uplift||"Full Uplift",UPLIFTS)}</select>`)}
@@ -900,6 +908,12 @@ function saleInfoBlock(a){
       ${f("LNL in place?", `<select data-input="edLnl" data-id="${a.id}">${sel(a.lnl?"Yes":"No",["No","Yes"])}</select>`)}
       ${f("CA No.", `<input data-input="edCa" data-id="${a.id}" value="${esc(a.caNo||"")}">`)}
     </div>
+    <div class="grid3" style="margin-top:10px">
+      ${f("Exc REV $(M)", `<input data-input="edRev" data-id="${a.id}" value="${a.excRev!=null&&a.excRev!==""?esc(a.excRev):(acctFin(a).rev/1e6).toFixed(2)}">`)}
+      ${f("GP $(M)", `<input data-input="edGp" data-id="${a.id}" value="${a.excGp!=null&&a.excGp!==""?esc(a.excGp):(acctFin(a).gp/1e6).toFixed(2)}">`)}
+      ${f("GP Impact $(M)", `<input data-input="edImpact" data-id="${a.id}" value="${a.excImpact!=null&&a.excImpact!==""?esc(a.excImpact):(acctFin(a).impact/1e6).toFixed(2)}">`)}
+    </div>
+    <div class="tiny" style="margin-top:6px">REV / GP / GP Impact are prefilled from the bid lines &amp; uplift gap — override with the real figures. They feed the reporting exception table and totals.</div>
   </div></div>`;
 }
 function vwTrkPM(){
@@ -1217,6 +1231,16 @@ function addModal(who){
         <div class="field"><label>Q10 · Valid date</label><input type="date" data-input="addEff" value="2026-02-01"></div>
         <div class="field"><label>LNL in place?</label><select data-input="addLnl"><option>No</option><option>Yes</option></select></div>
       </div>
+      ${who==="pm"? `
+      <div class="grid2">
+        <div class="field"><label>CA No.</label><input data-input="addCa" placeholder="e.g. CA-89310" value="${esc(S._addCa||"")}"></div>
+        <div class="field"><label>Exc REV $(M)</label><input data-input="addRev" placeholder="e.g. 4.20" value="${esc(S._addRev||"")}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>GP $(M)</label><input data-input="addGp" placeholder="e.g. 0.55" value="${esc(S._addGp||"")}"></div>
+        <div class="field"><label>GP Impact $(M)</label><input data-input="addImpact" placeholder="e.g. 0.19" value="${esc(S._addImpact||"")}"></div>
+      </div>
+      <div class="tiny">Leave REV / GP / GP Impact blank to auto-estimate from the bid lines &amp; uplift gap.</div>` : ""}
       <div class="field"><label>Description</label><textarea data-input="addDesc" placeholder="what this bid is">${esc(S._addDesc||"")}</textarea></div>
       <div class="tiny">Partial / No Uplift (or Bid Type = Exception) creates a Partial / Full Exception and puts it on the Profit Manager's board.</div>
       <button class="btn primary" data-act="add-submit" data-who="${who}">Add to Tracker</button>
@@ -1268,6 +1292,13 @@ function inputChange(key,val,node,silent){
     case "edEff": { const a=A(node.dataset.id); if(a) a.effective=val; break; }
     case "edLnl": { const a=A(node.dataset.id); if(a) a.lnl=val==="Yes"; break; }
     case "edCa": { const a=A(node.dataset.id); if(a) a.caNo=val; break; }
+    case "edRev": { const a=A(node.dataset.id); if(a) a.excRev=val.replace(/[^0-9.]/g,""); break; }
+    case "edGp": { const a=A(node.dataset.id); if(a) a.excGp=val.replace(/[^0-9.]/g,""); break; }
+    case "edImpact": { const a=A(node.dataset.id); if(a) a.excImpact=val.replace(/[^0-9.]/g,""); break; }
+    case "addCa": S._addCa=val; break;
+    case "addRev": S._addRev=val.replace(/[^0-9.]/g,""); break;
+    case "addGp": S._addGp=val.replace(/[^0-9.]/g,""); break;
+    case "addImpact": S._addImpact=val.replace(/[^0-9.]/g,""); break;
     case "actNote": S._actNote=val; break;
     case "reassignTo": S._reassignTo=val; break;
     case "freeCmt": S._freeCmt=val; break;
@@ -1463,6 +1494,7 @@ ACT["dir-confirm"]=function(d){
 ACT["add-open"]=function(d){
   S._addAcct=S.accounts[0].id; S._addType="Repricing"; S._addReq="Renewal"; S._addDesc="";
   S._addActive="Yes"; S._addUplift="Full Uplift"; S._addEff="2026-02-01"; S._addLnl="No";
+  S._addCa=""; S._addRev=""; S._addGp=""; S._addImpact="";
   S.overlay="add:"+d.who; renderOverlay(); bind();
 };
 ACT["add-submit"]=function(d){
@@ -1471,6 +1503,12 @@ ACT["add-submit"]=function(d){
   a.active=(S._addActive||"Yes")==="Yes";
   a.uplift=S._addUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
   a.effective=S._addEff||a.effective; a.lnl=(S._addLnl||"No")==="Yes";
+  if(who==="pm"){
+    if(S._addCa) a.caNo=S._addCa;
+    if(S._addRev!=="") a.excRev=S._addRev;
+    if(S._addGp!=="") a.excGp=S._addGp;
+    if(S._addImpact!=="") a.excImpact=S._addImpact;
+  }
   a.lastBy=(who==="pm"?PM_OF[a.mgr]:a.sp.split("@")[0]); a.lastAt=todayStamp();
   const isExc=(S._addType||"Repricing")==="Exception" || a.uplift!=="Full Uplift";
   const b=mkBid({id:nextBid(),accountId:a.id,type:isExc?"Exception":"RPG",description:(S._addDesc||"manual entry"),
