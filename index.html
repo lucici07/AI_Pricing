@@ -71,9 +71,23 @@
   .wordmark{display:flex;align-items:baseline;gap:9px;}
   .wordmark b{font-family:var(--fs-display);font-weight:600;font-size:20px;}
   .wordmark span{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:600;}
-  .top-actions{margin-left:auto;display:flex;gap:9px;align-items:center;}
+  .top-actions{margin-left:auto;display:flex;gap:9px;align-items:center;flex-wrap:wrap;}
   .btn-plain{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink-2);border-radius:7px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;}
   .btn-plain:hover{border-color:var(--brand);color:var(--brand);}
+  .btn-plain:disabled{opacity:.4;cursor:not-allowed;}
+  #gnav{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .gpill{font-size:11.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:4px 11px;}
+  .gpill .gk{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700;}
+  .gpill b{font-family:var(--fs-mono);}
+  .gpill .gm{color:var(--muted);}
+  .gtl{display:flex;gap:4px;flex-wrap:wrap;}
+  .gtl .gt{border:1px solid var(--border-strong);border-radius:7px;padding:6px 9px;font-size:11px;text-align:center;background:var(--surface);min-width:66px;}
+  .gtl .gt .gv{font-family:var(--fs-mono);font-weight:500;}
+  .gtl .gt .gc{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+  .gtl .gt.carried{opacity:.5;}
+  .gtl .gt.newrel .gc{color:var(--good);}
+  .gtl .gt.now{border-color:var(--brand);box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 22%,transparent);}
+  .gtl .gt.past.newrel{border-color:color-mix(in srgb,var(--good) 45%,transparent);}
   .tabs{max-width:1440px;margin:0 auto;padding:6px 22px 0;display:flex;gap:4px;}
   .tab{border:0;background:transparent;color:var(--muted);font-size:13px;font-weight:600;padding:9px 15px;border-radius:8px 8px 0 0;cursor:pointer;border-bottom:2px solid transparent;}
   .tab:hover{color:var(--ink);}
@@ -288,6 +302,7 @@
   <div class="inner">
     <div class="wordmark"><b>GA Repricing</b><span>Platform Prototype · Finance DT</span></div>
     <div class="top-actions">
+      <span id="gnav"></span>
       <button class="btn-plain" data-act="open-log">Activity log</button>
       <button class="btn-plain" data-act="reset-all">Reset demo</button>
     </div>
@@ -332,6 +347,24 @@ const BASELINE=[
   {geo:"AP",vertical:"Retail",rev:3.00e6,tmcgp:0.36e6}
 ];
 const MT_TARGET=14.0;
+
+/* guidance release timeline — some months are a NEW release (everyone must catch up), some are Carried (no action) */
+const GUIDANCE_TL=[
+  {v:"FY26 Feb",kind:"New"},{v:"FY26 Mar",kind:"New"},{v:"FY26 Apr",kind:"New"},
+  {v:"FY26 May",kind:"Carried"},{v:"FY26 Jun",kind:"Carried"},{v:"FY26 Jul",kind:"Carried"},
+  {v:"FY26 Aug",kind:"New"},{v:"FY26 Sep",kind:"New"},{v:"FY26 Oct",kind:"Carried"},{v:"FY26 Nov",kind:"New"}
+];
+const G_START=6;   // FY26 Aug — matches the "GTP FY26 Aug" references elsewhere
+const gVer=i=>GUIDANCE_TL[Math.max(0,Math.min(i,GUIDANCE_TL.length-1))];
+function latestReleaseIdx(){ let i=S.gIdx; while(i>0 && GUIDANCE_TL[i].kind!=="New") i--; return i; }
+function caughtIdx(a){ return a.caughtUpTo==null ? null : a.caughtUpTo; }
+function isBehind(a){
+  // only accounts on the guided price ("Full Uplift") need to re-catch-up every New release;
+  // Partial / No Uplift are exceptions with their own revisit-at-renewal lifecycle
+  if(a.active!==true || a.uplift!=="Full Uplift") return false;
+  const c=caughtIdx(a); return c!=null && c<latestReleaseIdx();
+}
+
 let bidSeq=5018, rptSeq=3302, clock=9*3600+14*60+3;
 const nextBid=()=>"B-"+(++bidSeq);
 const nextRpt=()=>"RPT-"+(++rptSeq);
@@ -340,7 +373,7 @@ const UPLIFTS=["Full Uplift","Partial Uplift","No Uplift"];
 const GUID_OF={"Full Uplift":"Full","Partial Uplift":"Partial","No Uplift":"None"};
 
 function acc(o){ return Object.assign({
-  active:true, track:null, guidance:null, uplift:null, caNo:null, effective:null, lnl:null,
+  active:true, track:null, guidance:null, uplift:null, caughtUpTo:null, caNo:null, effective:null, lnl:null,
   excRev:null, excGp:null, excImpact:null,
   lastBy:null, lastAt:null, exception:null, unread:{sale:false,pm:false}
 }, o); }
@@ -360,27 +393,27 @@ function mkBid(o){ return {
 
 function freshState(){
   const A=[
-    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caNo:"CA-88401",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
-    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caNo:"CA-88510",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"09-02 08:55"}),
+    acc({id:"meta",name:"Meta",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caughtUpTo:6,caNo:"CA-88401",effective:"2026-02-01",lnl:false,lastBy:"s.chan",lastAt:"09-02 14:20"}),
+    acc({id:"ibm",name:"IBM",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Tech",gam:"Arjun",track:"RPG",active:true,guidance:"Full",uplift:"Full Uplift",caughtUpTo:2,caNo:"CA-88510",effective:"2026-03-01",lnl:false,lastBy:"w.tan",lastAt:"08-05 08:55"}),
     acc({id:"puma",name:"Puma",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena",track:"RPG",active:true,guidance:null,lastBy:"t.koch",lastAt:"09-01 16:40"}),
     acc({id:"rakuten",name:"Rakuten",mgr:"Wei Tan",sp:"w.tan@lenovo.com",geo:"AP",vertical:"Retail",gam:"Arjun",track:"RPG",active:false,guidance:"None",uplift:"No Uplift",caNo:"CA-88033",lastBy:"w.tan",lastAt:"08-28 13:00"}),
     acc({id:"databricks",name:"Databricks",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"snowflake",name:"Snowflake",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul"}),
     acc({id:"zara",name:"Zara",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Lena"}),
-    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88702",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12",
+    acc({id:"cisco",name:"Cisco",mgr:"Dana Weiss",sp:"d.weiss@lenovo.com",geo:"NA",vertical:"Tech",gam:"Ken",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caughtUpTo:6,caNo:"CA-88702",effective:"2026-01-15",lnl:true,lastBy:"d.weiss",lastAt:"09-03 10:12",
       exception:{stage:"Approved",reason:"Multi-year framework — customer holds at prior tier plus 5% for the first year.",ask:"5% uplift vs 10% guided",
         performance:"Consistent full-guidance history until this renewal. Framework account, 4.2k units/yr, low churn risk.",
         materials:["framework_cisco.pdf","tmcgp_bridge_fy26.xlsx"],submittedBy:"Victor",submittedAt:"09-03 12:40",
         decision:"Approved",decisionNote:"5% partial uplift approved for year 1; step back to guidance in year 2.",calc:{totPct:13.9,bwPct:-0.1},draftSaved:true}}),
     acc({id:"stripe",name:"Stripe",mgr:"Sam Ortiz",sp:"s.chan@lenovo.com",geo:"NA",vertical:"Tech",gam:"Paul",track:"Exception",active:true,guidance:"None",uplift:"No Uplift",caNo:"CA-89101",
       exception:{stage:"PM-intake",reason:"Customer budget freeze for FY26 H1; asked to hold the Aug uplift.",ask:"0% uplift vs 10% guided",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
-    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-89010",
+    acc({id:"fifa",name:"FIFA",mgr:"Wei Tan",sp:"l.gomez@lenovo.com",geo:"EMEA",vertical:"Sport",gam:"Sofia",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caughtUpTo:6,caNo:"CA-89010",
       exception:{stage:"PM-intake",reason:"Event-year volume spike; requests tiered pricing on incremental units.",ask:"6% uplift vs 10% guided on incremental",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false}}),
-    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88815",effective:"2026-04-01",
+    acc({id:"nike",name:"Nike",mgr:"Sam Ortiz",sp:"a.raj@lenovo.com",geo:"EMEA",vertical:"Retail",gam:"Marta",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caughtUpTo:6,caNo:"CA-88815",effective:"2026-04-01",
       exception:{stage:"Director-review",reason:"Renewal at churn risk — incumbent competitor ~8% below guided price.",ask:"7% uplift vs 10% guided",
         performance:"4 straight quarters at full guidance. 2026 renewal at churn risk, competitor bid ~8% below. Volume steady at 3.1k units/yr; strategic EMEA retail logo.",
         materials:["renewal_terms_nike.pdf","tmcgp_bridge_fy26.xlsx","competitive_summary.pptx"],submittedBy:"Jessica",submittedAt:"09-05 11:04",decision:null,decisionNote:"",calc:null,draftSaved:true}}),
-    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caNo:"CA-88904",effective:"2026-02-15",unread:{sale:true,pm:true},
+    acc({id:"bosch",name:"Bosch",mgr:"Dana Weiss",sp:"t.koch@lenovo.com",geo:"EMEA",vertical:"Industrial",gam:"Lena",track:"Exception",active:true,guidance:"Partial",uplift:"Partial Uplift",caughtUpTo:6,caNo:"CA-88904",effective:"2026-02-15",unread:{sale:true,pm:true},
       exception:{stage:"Approved",reason:"Plant-wide refresh, 5-year relationship; one-time concession.",ask:"6% uplift vs 10% guided",
         performance:"Strategic industrial account, 5-year relationship. One-time 6% concession vs 10% guidance for a 2.6k-unit refresh.",
         materials:["plant_refresh_bosch.pdf","tmcgp_bridge_fy26.xlsx"],submittedBy:"Victor",submittedAt:"09-04 09:30",
@@ -411,7 +444,7 @@ function freshState(){
   ];
   return {
     tab:"lbp", role:{lbp:"sale", tracker:"sale", reporting:"ga"},
-    accounts:A, bids, rptRecords, saleBook:"Sam Ortiz",
+    accounts:A, bids, rptRecords, saleBook:"Sam Ortiz", gIdx:G_START,
     sel:{lbpBid:null, trkPM:null, trkDir:null, saleAcct:null, recSearch:""},
     lbpTool:null,
     reportFilter:{geo:"All",vertical:"All",excClass:"All"},
@@ -477,7 +510,7 @@ function pricingNote(b){
   const rows=b.lines.map(l=>{ const p=linePrice(l);
     return `${l.pn} | prev ${money(l.base)} | ${l.memory} | ${l.ssd} (${l.cpu}) = ${p!=null?money(p):"manual $ pending"}`; });
   const bm=bidMargin(b);
-  return `Repricing · ${a.name} · ${b.id} · ${a.geo}/${a.vertical} · GTP FY26 Aug (+10%)\n`+rows.join("\n")+
+  return `Repricing · ${a.name} · ${b.id} · ${a.geo}/${a.vertical} · GTP ${gVer(latestReleaseIdx()).v} (+10%)\n`+rows.join("\n")+
     `\nBlended margin ${bm==null?"—":bm.toFixed(1)+"%"}`+(b.pricerNote?`\n\nNotes: ${b.pricerNote}`:"");
 }
 function addComment(b,kind,role,by,text){ b.comments.push({role,by,kind,text,ts:todayStamp()}); }
@@ -485,10 +518,16 @@ const rptRecord=(bidId,role)=>S.rptRecords.find(r=>r.bidId===bidId&&r.role===rol
 
 function computeReport(list){
   const active=list.filter(a=>a.active===true);
-  const b={full:0,partial:0,none:0,missing:0};
-  active.forEach(a=>{ if(a.guidance==="Full")b.full++; else if(a.guidance==="Partial")b.partial++; else if(a.guidance==="None")b.none++; else b.missing++; });
+  const b={full:0,partial:0,none:0,missing:0,behind:0};
+  active.forEach(a=>{
+    if(!a.guidance){ b.missing++; return; }
+    if(isBehind(a)){ b.behind++; return; }
+    if(a.guidance==="Full")b.full++; else if(a.guidance==="Partial")b.partial++; else b.none++;
+  });
   return {total:list.length,active:active.length,notActive:list.filter(a=>a.active===false).length,b,
-    exceptions:list.filter(a=>a.track==="Exception"), missing:list.filter(a=>a.active===true&&!a.guidance)};
+    exceptions:list.filter(a=>a.track==="Exception"),
+    missing:list.filter(a=>a.active===true&&!a.guidance),
+    behindList:active.filter(isBehind)};
 }
 function runCalc(accId){
   const a=A(accId);
@@ -518,8 +557,19 @@ const sortedBoard=role=>[...S.accounts].filter(a=>a.track).map(a=>({a,c:boardCol
   .sort((x,y)=>(CO[x.c]-CO[y.c])||x.a.name.localeCompare(y.a.name));
 
 /* ============================================================ render */
+function renderGnav(){
+  const g=gVer(S.gIdx), rel=gVer(latestReleaseIdx());
+  const behind=S.accounts.filter(isBehind).length;
+  const atEnd=S.gIdx>=GUIDANCE_TL.length-1;
+  $("#gnav").innerHTML=`
+    <span class="gpill" title="Guidance release the book must be caught up to">
+      <span class="gk">Guidance</span> <b>${rel.v}</b>
+      <span class="gm">· current month ${g.v} (${g.kind})${behind?` · <span style="color:var(--brand)">${behind} behind</span>`:""}</span>
+    </span>
+    <button class="btn-plain" data-act="advance-month" ${atEnd?"disabled":""}>▸ Advance month</button>`;
+}
 function render(){
-  renderTabs(); renderRoles();
+  renderTabs(); renderRoles(); renderGnav();
   let html;
   if(S.tab==="lbp"){
     if(S.role.lbp==="records") html=lbpRecords();
@@ -825,10 +875,12 @@ function vwTrkSale(){
   const book=S.saleBook;
   const list=S.accounts.filter(a=>a.mgr===book);
   const statusOf=a=>{
+    if(isBehind(a)) return "Catch-up needed";
     if(a.track==="Exception"){ const e=a.exception||{};
       return e.decision? e.decision : e.stage==="PM-intake"?"With Profit Mgr" : e.stage==="Director-review"?"With Director/CFO" : "In exception"; }
     if(a.track==="RPG") return "Repricing — done";
     return "Not submitted"; };
+  const behind=list.filter(isBehind);
   const selA=S.sel.saleAcct&&A(S.sel.saleAcct);
   const relBid=selA&&S.bids.find(b=>b.accountId===selA.id);
   return `
@@ -836,8 +888,11 @@ function vwTrkSale(){
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${list.length}</div><div class="l">Accounts in book</div><div class="s">${book}</div></div>
     <div class="stat"><div class="v">${list.filter(a=>a.track==="Exception").length}</div><div class="l">In exception</div></div>
+    <div class="stat" style="border-left:4px solid var(--brand)"><div class="v">${behind.length}</div><div class="l">Catch-up needed</div><div class="s">for ${gVer(latestReleaseIdx()).v}</div></div>
     <div class="stat"><div class="v">${list.filter(a=>a.unread.sale).length}</div><div class="l">Unread results</div></div>
   </div>
+  ${behind.length? `<div class="callout warn" style="margin-bottom:16px"><b>${behind.length} account${behind.length>1?"s":""} behind ${gVer(latestReleaseIdx()).v}:</b>
+    ${behind.map(a=>`<button class="btn ghost sm" data-act="catch-up" data-id="${a.id}" style="margin:3px 4px 0 0">${a.name} — catch up ↑</button>`).join("")}</div>`:""}
   <div class="card"><h3>My accounts <span class="plat">Main Table</span></h3>
     <div class="pad">
       <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap">
@@ -855,7 +910,7 @@ function vwTrkSale(){
           <td>${a.lnl==null?"—":a.lnl?"Yes":"No"}</td>
           <td class="mono">${a.lastBy||"—"}</td>
           <td class="mono">${PM_OF[a.mgr]}</td>
-          <td>${a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill ${a.track==="Exception"?"yellow":a.track==="RPG"?"info":"mut"}">${statusOf(a)}</span>`}</td></tr>`).join("")}</tbody></table></div>
+          <td>${isBehind(a)?`<span class="pill bad">Catch-up needed</span>`:a.track==="Exception"&&a.exception?.decision?decisionPill(a.exception.decision):`<span class="pill ${a.track==="Exception"?"yellow":a.track==="RPG"?"info":"mut"}">${statusOf(a)}</span>`}</td></tr>`).join("")}</tbody></table></div>
     </div></div>
   ${selA? `<div class="card" style="margin-top:16px"><h3>${selA.name} — what you filled in LBP</h3><div class="pad stack">
       <div class="grid3">
@@ -868,8 +923,10 @@ function vwTrkSale(){
       <div class="grid3">
         <div class="field"><label>Previous Sale on account</label><div class="ro">${selA.lastBy||"—"}</div></div>
         <div class="field"><label>Profit Manager</label><div class="ro">${PM_OF[selA.mgr]}</div></div>
+        <div class="field"><label>Guidance version followed</label><div class="ro">${selA.caughtUpTo!=null?gVer(selA.caughtUpTo).v:"—"}</div></div>
         <div class="field"><label>Account status</label><div class="ro">${statusOf(selA)}</div></div>
       </div>
+      ${isBehind(selA)? `<div class="callout warn"><b>Behind ${gVer(latestReleaseIdx()).v}.</b> This account was repriced against ${gVer(selA.caughtUpTo).v}; a new guidance release is out. <button class="btn primary sm" data-act="catch-up" data-id="${selA.id}" style="margin-left:8px">Catch up</button></div>`:""}
       ${selA.exception&&selA.exception.decision? `<div class="callout ${selA.exception.decision==="Approved"?"good":"bad"}"><b>Exception ${selA.exception.decision}.</b> ${esc(selA.exception.decisionNote)}</div>`:""}
       ${relBid&&relBid.comments.length? `<div><div class="tiny" style="margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Feedback from Pricer / Director on ${relBid.id}</div>
         <div class="commentthread">${relBid.comments.map(c=>`<div class="cmt ${c.kind}"><div class="h"><b>${c.by}</b> · ${c.role} · ${c.kind} · ${c.ts}</div>${esc(c.text)}</div>`).join("")}</div></div>`:""}
@@ -907,6 +964,9 @@ function saleInfoBlock(a){
       ${f("Q10 Valid date", `<input type="date" data-input="edEff" data-id="${a.id}" value="${a.effective||""}">`)}
       ${f("LNL in place?", `<select data-input="edLnl" data-id="${a.id}">${sel(a.lnl?"Yes":"No",["No","Yes"])}</select>`)}
       ${f("CA No.", `<input data-input="edCa" data-id="${a.id}" value="${esc(a.caNo||"")}">`)}
+    </div>
+    <div class="grid3" style="margin-top:10px">
+      ${f("Guidance version followed", `<div class="ro">${a.caughtUpTo!=null?gVer(a.caughtUpTo).v:"—"}${isBehind(a)?` · <span style="color:var(--brand)">behind ${gVer(latestReleaseIdx()).v}</span>`:""}</div>`)}
     </div>
     <div class="grid3" style="margin-top:10px">
       ${f("Exc REV $(M)", `<input data-input="edRev" data-id="${a.id}" value="${a.excRev!=null&&a.excRev!==""?esc(a.excRev):(acctFin(a).rev/1e6).toFixed(2)}">`)}
@@ -1030,8 +1090,9 @@ function vwReport(kind){
   const exc=R.exceptions.filter(a=>gvMatch(a)&&clsMatch(a));
   const miss=R.missing.filter(gvMatch);
   const uplTable=`<table class="sheet"><thead><tr><th>Bucket</th><th class="num">Accounts</th><th class="num">% of active</th></tr></thead>
-    <tbody>${upRow("Full uplift",R.b.full,R.active)}${upRow("Partial uplift",R.b.partial,R.active)}${upRow("No uplift",R.b.none,R.active)}${upRow("Missing input",R.b.missing,R.active)}</tbody>
+    <tbody>${upRow("Full uplift",R.b.full,R.active)}${upRow("Partial uplift",R.b.partial,R.active)}${upRow("No uplift",R.b.none,R.active)}${upRow("Catch-up needed",R.b.behind,R.active)}${upRow("Missing input",R.b.missing,R.active)}</tbody>
     <tfoot><tr class="total"><td>Active total</td><td class="num">${R.active}</td><td class="num">100%</td></tr></tfoot></table>`;
+  const behind=R.behindList.filter(gvMatch);
   const chart=kind==="GA"?decompTree(R):verticalBreakdown();
 
   // exception sizing by class (respecting geo/vertical filter, ignoring the class filter)
@@ -1052,10 +1113,20 @@ function vwReport(kind){
       <div style="font-family:var(--fs-display);font-weight:600;font-size:22px;line-height:1.15;color:var(--brand)">${today()}</div>
     </div>
   </div>
+  <div class="card" style="margin-bottom:16px"><h3>Guidance release timeline <span class="plat">must be caught up to the latest New release</span></h3>
+    <div class="pad">
+      <div class="gtl">${GUIDANCE_TL.map((g,i)=>{
+        let c="gt "+(g.kind==="Carried"?"carried":"newrel");
+        if(i===S.gIdx) c+=" now"; else if(i<S.gIdx) c+=" past";
+        return `<div class="${c}"><div class="gv">${g.v}</div><div class="gc">${i===latestReleaseIdx()?"◀ must follow":g.kind}</div></div>`;
+      }).join("")}</div>
+      <div class="tiny" style="margin-top:8px">Every <b>New</b> release resets the book — accounts still on an older version count as <b>Catch-up needed</b> until Sale re-confirms. Use <b>▸ Advance month</b> (top bar) to move the clock.</div>
+    </div></div>
   <div class="statgrid" style="margin-bottom:16px">
     <div class="stat"><div class="v">${R.total}</div><div class="l">GA accounts</div></div>
     <div class="stat"><div class="v">${R.active}</div><div class="l">Active</div><div class="s">${pct(R.active,R.total)}</div></div>
     <div class="stat"><div class="v">${R.notActive}</div><div class="l">Not active</div></div>
+    <div class="stat" style="border-left:4px solid var(--brand)"><div class="v">${R.b.behind}</div><div class="l">Catch-up needed</div><div class="s">behind ${gVer(latestReleaseIdx()).v}</div></div>
     <div class="stat"><div class="v">${R.b.missing}</div><div class="l">Missing input</div><div class="s">${pct(R.b.missing,R.active)} of active</div></div>
     ${sizeCard("Partial Exception",sPartial,"var(--warn)")}
     ${sizeCard("Full Exception",sFull,"var(--bad)")}
@@ -1085,18 +1156,23 @@ function vwReport(kind){
             <td class="num">${(tR/1e6).toFixed(2)}</td><td class="num">${(tG/1e6).toFixed(2)}</td><td class="num">${(tI/1e6).toFixed(2)}</td><td></td></tr></tfoot>`; })() : ""}
         </table></div>
 
-      <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length}</div>
+      <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Catch-up needed · ${behind.length} <span style="text-transform:none;font-weight:400">— was caught up, ${gVer(latestReleaseIdx()).v} released, not re-confirmed</span></div>
+      <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>ISR</th><th>Currently on</th><th>Needs</th><th>Uplift</th></tr></thead>
+        <tbody>${behind.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td class="mono">${a.sp.split("@")[0]}</td>
+          <td class="mono">${a.caughtUpTo!=null?gVer(a.caughtUpTo).v:"—"}</td><td class="mono">${gVer(latestReleaseIdx()).v}</td><td>${a.uplift||"—"}</td></tr>`).join("")||`<tr><td colspan="6" class="tiny">none — the whole book is current</td></tr>`}</tbody></table>
+
+      <div class="tiny" style="margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Missing input · ${miss.length} <span style="text-transform:none;font-weight:400">— never submitted</span></div>
       <table class="sheet"><thead><tr><th>Account</th><th>Geo / Vert</th><th>ISR</th><th>Sale Mgr</th><th>Last updated</th></tr></thead>
         <tbody>${miss.map(a=>`<tr><td><b>${a.name}</b></td><td class="mono">${a.geo}/${a.vertical}</td><td class="mono">${a.sp.split("@")[0]}</td><td>${a.mgr}</td><td class="mono">${a.lastAt||"never"}</td></tr>`).join("")||`<tr><td colspan="5" class="tiny">none</td></tr>`}</tbody></table>
     </div></div>`;
 }
 function upRow(label,n,base){
-  const c={"Full uplift":"var(--good)","Partial uplift":"var(--warn)","No uplift":"var(--bad)","Missing input":"var(--border-strong)"}[label];
+  const c={"Full uplift":"var(--good)","Partial uplift":"var(--warn)","No uplift":"var(--bad)","Catch-up needed":"var(--brand)","Missing input":"var(--border-strong)"}[label];
   return `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:7px"></span>${label}</td><td class="num">${n}</td><td class="num">${pct(n,base)}</td></tr>`;
 }
 function decompTree(R){
   const bar=(v,max,color)=>`<div class="tn-bar"><i style="width:${max?Math.round(v/max*100):0}%;background:${color}"></i></div>`;
-  const mt=Math.max(R.active,R.notActive,1), mb=Math.max(R.b.full,R.b.partial,R.b.none,R.b.missing,1);
+  const mt=Math.max(R.active,R.notActive,1), mb=Math.max(R.b.full,R.b.partial,R.b.none,R.b.behind,R.b.missing,1);
   return `<div class="tree">
     <div class="tcol"><div class="tnode root"><div class="tn-l">GA portfolio</div><div class="tn-v">${R.total}</div></div></div>
     <div class="tcol links"><div class="lwrap"><span class="link"></span><span class="link"></span></div></div>
@@ -1108,6 +1184,7 @@ function decompTree(R){
       <div class="tnode"><div class="tn-l">Full uplift</div><div class="tn-v">${R.b.full}</div>${bar(R.b.full,mb,"var(--good)")}</div>
       <div class="tnode"><div class="tn-l">Partial uplift</div><div class="tn-v">${R.b.partial}</div>${bar(R.b.partial,mb,"var(--warn)")}</div>
       <div class="tnode"><div class="tn-l">No uplift</div><div class="tn-v">${R.b.none}</div>${bar(R.b.none,mb,"var(--bad)")}</div>
+      <div class="tnode"><div class="tn-l">Catch-up needed</div><div class="tn-v">${R.b.behind}</div>${bar(R.b.behind,mb,"var(--brand)")}</div>
       <div class="tnode"><div class="tn-l">Missing input</div><div class="tn-v">${R.b.missing}</div>${bar(R.b.missing,mb,"var(--border-strong)")}</div></div>
   </div>`;
 }
@@ -1117,9 +1194,9 @@ function verticalBreakdown(){
     const sub=S.accounts.filter(a=>a.vertical===v), R=computeReport(sub);
     const seg=(n,color)=>n?`<i style="width:${n/Math.max(R.active,1)*100}%;background:${color}"></i>`:"";
     return `<div class="tm"><h4>${v} <span>${sub.length} acct · ${R.active} active</span></h4>
-      <div class="stack">${seg(R.b.full,"var(--good)")}${seg(R.b.partial,"var(--warn)")}${seg(R.b.none,"var(--bad)")}${seg(R.b.missing,"var(--border-strong)")}</div>
+      <div class="stack">${seg(R.b.full,"var(--good)")}${seg(R.b.partial,"var(--warn)")}${seg(R.b.none,"var(--bad)")}${seg(R.b.behind,"var(--brand)")}${seg(R.b.missing,"var(--border-strong)")}</div>
       <div class="key"><span><b style="background:var(--good)"></b>Full ${R.b.full}</span><span><b style="background:var(--warn)"></b>Partial ${R.b.partial}</span>
-        <span><b style="background:var(--bad)"></b>None ${R.b.none}</span><span><b style="background:var(--border-strong)"></b>Missing ${R.b.missing}</span></div></div>`;
+        <span><b style="background:var(--bad)"></b>None ${R.b.none}</span><span><b style="background:var(--brand)"></b>Catch-up ${R.b.behind}</span><span><b style="background:var(--border-strong)"></b>Missing ${R.b.missing}</span></div></div>`;
   }).join("")+`</div>`;
 }
 
@@ -1137,6 +1214,7 @@ function renderOverlay(){
   else if(kind==="dir") o.innerHTML=dirDecideModal(parts[1],parts[2]);
   else if(kind==="rec") o.innerHTML=recModal(arg);
   else if(kind==="add") o.innerHTML=addModal(arg);
+  else if(kind==="catchup") o.innerHTML=catchUpModal(arg);
 }
 function dirDecideModal(kind,accId){
   const a=A(accId), e=a.exception;
@@ -1169,6 +1247,24 @@ function syncRpgModal(bidId){
         <div class="field"><label>LNL in place?</label><select data-input="q_lnl"><option>No</option><option>Yes</option></select></div>
       </div>
       <button class="btn primary" data-act="sync-rpg-submit" data-id="${bidId}">Submit to Tracker</button>
+    </div></div></div>`;
+}
+function catchUpModal(accId){
+  const a=A(accId); const sel=(v,o)=>o.map(x=>`<option ${x===v?"selected":""}>${x}</option>`).join("");
+  const rel=gVer(latestReleaseIdx());
+  return `<div class="modal-scrim" data-act="close-overlay"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><h3>Catch up to guidance — ${a.name}</h3><button class="x" data-act="close-overlay">✕</button></div>
+    <div class="mb">
+      <div class="callout warn">This account was last repriced against <b>${a.caughtUpTo!=null?gVer(a.caughtUpTo).v:"—"}</b>. Guidance <b>${rel.v}</b> is now the current release — confirm the new outcome with the customer.</div>
+      <div class="grid2">
+        <div class="field"><label>Active account?</label><select data-input="q_active">${sel(a.active?"Yes":"No",["Yes","No"])}</select></div>
+        <div class="field"><label>Uplift agreed with customer</label><select data-input="q_uplift">${sel(S._qUplift||a.uplift||"Full Uplift",UPLIFTS)}</select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Valid date</label><input type="date" data-input="q_eff" value="${a.effective||"2026-02-01"}"></div>
+        <div class="field"><label>LNL in place?</label><select data-input="q_lnl">${sel(a.lnl?"Yes":"No",["No","Yes"])}</select></div>
+      </div>
+      <button class="btn primary" data-act="catch-up-submit" data-id="${accId}">Confirm caught up to ${rel.v}</button>
     </div></div></div>`;
 }
 function syncExcModal(bidId){
@@ -1324,6 +1420,49 @@ const ACT={
   "close-overlay"(){ S.overlay=null; render(); },
   "reset-all"(){ S=freshState(); render(); toast("Demo reset."); },
 
+  "advance-month"(){
+    if(S.gIdx>=GUIDANCE_TL.length-1) return;
+    const before=S.accounts.filter(isBehind).length;
+    S.gIdx++;
+    const g=gVer(S.gIdx);
+    const now=S.accounts.filter(isBehind).length;
+    if(g.kind==="New"){
+      const newly=now-before;
+      log(`New guidance <b>${g.v}</b> released — <b>${newly}</b> account${newly!==1?"s":""} now behind and need a catch-up repricing.`, true);
+      toast(`${g.v} released — ${newly} account${newly!==1?"s":""} need catch-up.`);
+    } else {
+      log(`Month rolled to <b>${g.v}</b> — Carried release, no catch-up needed.`);
+      toast(`${g.v} — carried, nothing to catch up.`);
+    }
+    render();
+  },
+  "catch-up"(d){
+    const a=A(d.id);
+    S._qActive=a.active?"Yes":"No"; S._qUplift=a.uplift||"Full Uplift"; S._qEff=a.effective||"2026-02-01"; S._qLnl=a.lnl?"Yes":"No";
+    S.overlay="catchup:"+d.id; renderOverlay(); bind();
+  },
+  "catch-up-submit"(d){
+    const a=A(d.id);
+    a.active=(S._qActive||"Yes")==="Yes";
+    a.uplift=S._qUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
+    a.effective=S._qEff||a.effective; a.lnl=(S._qLnl||"No")==="Yes";
+    a.caughtUpTo=latestReleaseIdx();
+    a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
+    S.overlay=null;
+    if(a.uplift==="Full Uplift"){
+      a.track="RPG";
+      log(`Sale caught <b>${a.name}</b> up to guidance <b>${gVer(a.caughtUpTo).v}</b> — Full Uplift.`, true);
+      toast(`${a.name} caught up to ${gVer(a.caughtUpTo).v}.`);
+    } else {
+      a.track="Exception"; const cls=excClassOf(a);
+      a.exception=a.exception&&!a.exception.decision? a.exception : {stage:"PM-intake",reason:`Customer agreed to ${a.uplift} for ${gVer(a.caughtUpTo).v}.`,ask:a.uplift==="Partial Uplift"?"Partial uplift vs 10% guided":"0% uplift vs 10% guided",performance:"",materials:[],submittedBy:null,submittedAt:null,decision:null,decisionNote:"",calc:null,draftSaved:false,class:cls};
+      a.exception.class=cls;
+      log(`Sale re-confirmed <b>${a.name}</b> for <b>${gVer(a.caughtUpTo).v}</b> as <b>${cls}</b>.`, true);
+      toast(`${a.name} → ${cls} for ${gVer(a.caughtUpTo).v}.`);
+    }
+    render();
+  },
+
   /* LBP nav */
   "lbp-open"(d){ S.sel.lbpBid=d.id; S.lbpTool=null; render(); },
   "lbp-back"(){ S.sel.lbpBid=null; S.lbpTool=null; render(); },
@@ -1355,6 +1494,7 @@ const ACT={
     a.active=(S._qActive||"Yes")==="Yes";
     a.uplift=S._excUplift||"No Uplift"; a.guidance=GUID_OF[a.uplift];
     a.effective=S._qEff||a.effective; a.lnl=(S._qLnl||"No")==="Yes";
+    a.caughtUpTo=latestReleaseIdx();
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
     a.exception.class=excClassOf(a);
     S._excReason=""; S._excAsk=""; S._excUplift=""; S.overlay=null;
@@ -1368,6 +1508,7 @@ const ACT={
     a.active=(S._qActive||"Yes")==="Yes";
     a.uplift=S._qUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
     a.effective=S._qEff||"2026-02-01"; a.lnl=(S._qLnl||"No")==="Yes";
+    a.caughtUpTo=latestReleaseIdx();
     a.lastBy=a.sp.split("@")[0]; a.lastAt=todayStamp();
     S.overlay=null; S.sel.lbpBid=null;
     if(a.uplift==="Full Uplift"){
@@ -1503,6 +1644,7 @@ ACT["add-submit"]=function(d){
   a.active=(S._addActive||"Yes")==="Yes";
   a.uplift=S._addUplift||"Full Uplift"; a.guidance=GUID_OF[a.uplift];
   a.effective=S._addEff||a.effective; a.lnl=(S._addLnl||"No")==="Yes";
+  a.caughtUpTo=latestReleaseIdx();
   if(who==="pm"){
     if(S._addCa) a.caNo=S._addCa;
     if(S._addRev!=="") a.excRev=S._addRev;
